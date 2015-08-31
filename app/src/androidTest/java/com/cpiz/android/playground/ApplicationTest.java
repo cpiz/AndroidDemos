@@ -1,4 +1,4 @@
-package com.cpiz.android.demos;
+package com.cpiz.android.playground;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

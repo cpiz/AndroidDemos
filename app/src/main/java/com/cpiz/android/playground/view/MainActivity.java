@@ -1,5 +1,6 @@
-package com.cpiz.android.demos.view;
+package com.cpiz.android.playground.view;
 
+import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,38 +11,48 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 
-import com.cpiz.androidplayground.R;
+import com.cpiz.android.playground.R;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends ListActivity {
 
-    class DemoAction {
-        public DemoAction(String name, Runnable action) {
+    class TestAction {
+        public TestAction(String name, Runnable action) {
             this.name = name;
             this.action = action;
+        }
+
+        public TestAction(final Class<?> cls) {
+            this.name = cls.getSimpleName();
+            this.action = new Runnable() {
+                @Override
+                public void run() {
+                    startActivity(new Intent(MainActivity.this, cls));
+                }
+            };
         }
 
         String name;
         Runnable action;
     }
 
-    private List<DemoAction> demoActions = new ArrayList<>();
+    private List<TestAction> mTestActions = new ArrayList<>();
     BaseAdapter adapter = new BaseAdapter() {
         @Override
         public int getCount() {
-            return demoActions.size();
+            return mTestActions.size();
         }
 
         @Override
-        public DemoAction getItem(int position) {
-            return demoActions.get(position);
+        public TestAction getItem(int position) {
+            return mTestActions.get(position);
         }
 
         @Override
         public long getItemId(int position) {
-            return demoActions.get(position).hashCode();
+            return mTestActions.get(position).hashCode();
         }
 
         @Override
@@ -66,9 +77,17 @@ public class MainActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        initDemoActivities();
+        initTestActions();
         setListAdapter(adapter);
         adapter.notifyDataSetChanged();
+    }
+
+    /**
+     * 在这定义要试验的功能，或启动新的 ACTIVITY
+     */
+    private void initTestActions() {
+        mTestActions.add(new TestAction(MainActivity.class));
+        mTestActions.add(new TestAction(RxBusTestActivity.class));
     }
 
     @Override
@@ -91,17 +110,5 @@ public class MainActivity extends ListActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * 在这定义要试验的功能，或启动新的SUB DEMO ACTIVITY
-     */
-    private void initDemoActivities() {
-        demoActions.add(new DemoAction("MainActivity", new Runnable() {
-            @Override
-            public void run() {
-                startActivity(new Intent(MainActivity.this, MainActivity.class));
-            }
-        }));
     }
 }
