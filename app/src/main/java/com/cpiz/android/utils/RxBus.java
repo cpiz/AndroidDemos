@@ -10,6 +10,8 @@ import com.trello.rxlifecycle.components.RxActivity;
 import com.trello.rxlifecycle.components.RxDialogFragment;
 import com.trello.rxlifecycle.components.RxFragment;
 
+import java.security.InvalidParameterException;
+
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
@@ -82,8 +84,8 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> registerOnActivity(final Class<T> cls, final RxActivity activity) {
-        if (!(activity instanceof RxActivity)) {
-            throw new IllegalArgumentException(String.format("%s is not instance of RxActivity", activity));
+        if (activity == null) {
+            throw new InvalidParameterException("activity can not be null");
         }
 
         return register(cls).compose(RxLifecycle.<T>bindUntilActivityEvent(activity.lifecycle(), ActivityEvent.DESTROY));
@@ -98,8 +100,8 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> registerOnFragment(final Class<T> cls, final RxFragment fragment) {
-        if (!(fragment instanceof RxFragment)) {
-            throw new IllegalArgumentException(String.format("%s is not instance of RxFragment", fragment));
+        if (fragment == null) {
+            throw new InvalidParameterException("fragment can not be null");
         }
 
         return register(cls).compose(RxLifecycle.<T>bindUntilFragmentEvent(fragment.lifecycle(), FragmentEvent.DESTROY));
@@ -114,8 +116,8 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> registerOnDialogFragment(final Class<T> cls, final RxDialogFragment dlgFragment) {
-        if (!(dlgFragment instanceof RxDialogFragment)) {
-            throw new IllegalArgumentException(String.format("%s is not instance of RxDialogFragment", dlgFragment));
+        if (dlgFragment == null) {
+            throw new InvalidParameterException("dlgFragment can not be null");
         }
 
         return register(cls).compose(RxLifecycle.<T>bindUntilFragmentEvent(dlgFragment.lifecycle(), FragmentEvent.DESTROY));
@@ -131,8 +133,8 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> registerOnView(final Class<T> cls, final View view) {
-        if (!(view instanceof View)) {
-            throw new IllegalArgumentException(String.format("%s is not instance of View", view));
+        if (view == null) {
+            throw new InvalidParameterException("view can not be null");
         }
 
         return register(cls).takeUntil(RxView.detaches(view));

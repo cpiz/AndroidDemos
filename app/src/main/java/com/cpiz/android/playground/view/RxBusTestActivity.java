@@ -6,8 +6,6 @@ import android.view.View;
 
 import com.cpiz.android.utils.RxBus;
 
-import junit.framework.Test;
-
 import rx.functions.Action0;
 import rx.functions.Action1;
 
