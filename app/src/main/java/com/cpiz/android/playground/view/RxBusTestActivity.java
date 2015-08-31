@@ -2,11 +2,12 @@ package com.cpiz.android.playground.view;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import com.cpiz.android.utils.RxBus;
 
-import rx.android.view.OnClickEvent;
-import rx.android.view.ViewObservable;
+import junit.framework.Test;
+
 import rx.functions.Action0;
 import rx.functions.Action1;
 
@@ -20,20 +21,45 @@ public class RxBusTestActivity extends SimpleTestActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getEditText().setText("Click button to emit test events, " +
+        getEditText().setText("Click button to post test events, " +
                 "register and filter the event type, " +
                 "then append the event content into edit text\n" +
                 "--------------------\n");
 
         RxBus.getDefault().post(new TestEvent("test 0"));   // post before register
 
-        ViewObservable.clicks(getButton())
-                .subscribe(new Action1<OnClickEvent>() {
+        getButton().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RxBus.getDefault().post(new TestEvent("test 1"));
+                RxBus.getDefault().post(null);
+                RxBus.getDefault().post(new TestEvent("test 2"));
+            }
+        });
+
+        RxBus.getDefault().registerOnActivity(TestEvent.class, this)
+                .doOnSubscribe(new Action0() {
                     @Override
-                    public void call(OnClickEvent onClickEvent) {
-                        RxBus.getDefault().post(new TestEvent("test 1"));
-                        RxBus.getDefault().post(null);
-                        RxBus.getDefault().post(new TestEvent("test 2"));
+                    public void call() {
+                        Log.i(TAG, "registerOnActivity doOnSubscribe");
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.i(TAG, "registerOnActivity doOnUnsubscribe");
+                    }
+                })
+                .doOnTerminate(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.i(TAG, "registerOnActivity doOnTerminate");
+                    }
+                })
+                .subscribe(new Action1<TestEvent>() {
+                    @Override
+                    public void call(TestEvent testEvent) {
+                        getEditText().append(String.format("Got event[%s] registerOnActivity\n", testEvent.getEvent()));
                     }
                 });
 
@@ -41,25 +67,25 @@ public class RxBusTestActivity extends SimpleTestActivity {
                 .doOnSubscribe(new Action0() {
                     @Override
                     public void call() {
-                        Log.i(TAG, "doOnSubscribe");
+                        Log.i(TAG, "registerOnView doOnSubscribe");
                     }
                 })
                 .doOnUnsubscribe(new Action0() {
                     @Override
                     public void call() {
-                        Log.i(TAG, "doOnUnsubscribe");
+                        Log.i(TAG, "registerOnView doOnUnsubscribe");
                     }
                 })
                 .doOnTerminate(new Action0() {
                     @Override
                     public void call() {
-                        Log.i(TAG, "doOnTerminate");
+                        Log.i(TAG, "registerOnView doOnTerminate");
                     }
                 })
                 .subscribe(new Action1<TestEvent>() {
                     @Override
                     public void call(TestEvent testEvent) {
-                        getEditText().append(String.format("Got event[%s]\n", ((TestEvent) testEvent).getEvent()));
+                        getEditText().append(String.format("Got event[%s] registerOnView\n", testEvent.getEvent()));
                     }
                 });
     }

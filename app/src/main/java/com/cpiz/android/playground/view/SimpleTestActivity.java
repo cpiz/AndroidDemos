@@ -1,17 +1,17 @@
 package com.cpiz.android.playground.view;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.cpiz.android.playground.R;
+import com.trello.rxlifecycle.components.RxActivity;
 
 /**
  * Created by caijw on 2015/8/31.
  */
-public class SimpleTestActivity extends Activity {
+public class SimpleTestActivity extends RxActivity {
     private static final String TAG = "SimpleTestActivity";
 
     private Button mButton;
