@@ -33,7 +33,7 @@ public class GsonMessageTestActivity extends BaseTestActivity {
 
     @Override
     public void onClick(View v) {
-        String srcJson = "{\"id\":\"ididididid\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":\"oooooorderid\",\"xxx\":{\"x\":123,\"y\":456}}";
+        String srcJson = "{\"id\":\"ididididid\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":{\"x\":123,\"y\":456}}";
 
         Message msg = Message.fromJson(srcJson);
         appendLine(String.format("post a message[%s]", msg.getClass().getSimpleName()));

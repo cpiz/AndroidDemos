@@ -18,6 +18,7 @@ import com.google.gson.annotations.SerializedName;
 
 import org.joda.time.DateTime;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
 
@@ -69,23 +70,61 @@ public abstract class Message<T> {
     }
 
     /**
+     * 将Message对象转为Json字符串
+     *
+     * @return Json字符串
+     */
+    public String toJson() {
+        return new GsonBuilder()
+                .registerTypeAdapter(this.getClass(), new MessageSerializer())
+                .create()
+                .toJson(this);
+    }
+
+    /**
      * 从Json字符串获得一个Message子类对象
      *
      * @param json Json字符串
      * @param cls  Message子类
      * @return Message子类实例
      */
-    public static <T extends Message> T fromJson(String json, Class<T> cls) {
-        return new GsonBuilder().registerTypeAdapter(cls, new MessageSerializer()).create().fromJson(json, cls);
+    private static <T extends Message> T fromJson(String json, Class<T> cls) {
+        return new GsonBuilder()
+                .registerTypeAdapter(cls, new MessageSerializer())
+                .create()
+                .fromJson(json, cls);
     }
 
-    /**
-     * 将Message对象转为Json字符串
-     *
-     * @return Json字符串
-     */
-    public String toJson() {
-        return new GsonBuilder().registerTypeAdapter(this.getClass(), new MessageSerializer()).create().toJson(this);
+    protected static class MessageSerializer implements JsonSerializer<Message>, JsonDeserializer<Message> {
+        @Override
+        public Message deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .registerTypeAdapter(DateTime.class, new UnixDateTimeDeSerializer())
+                    .disableInnerClassSerialization()
+                    .create();
+            Message msg = gson.fromJson(json, typeOfT);
+            try {
+                msg.setPayload(msg.getGsonForPayload().fromJson(json.getAsJsonObject().get("payload"), msg.getPayloadType()));
+            } catch (Exception e) {
+                Log.e(TAG, "parse payload error", e);
+            }
+            return msg;
+        }
+
+        @Override
+        public JsonElement serialize(Message src, Type typeOfSrc, JsonSerializationContext context) {
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .registerTypeAdapter(DateTime.class, new UnixDateTimeDeSerializer())
+                    .disableInnerClassSerialization()
+                    .create();
+            JsonParser parser = new JsonParser();
+            JsonElement element = parser.parse(gson.toJson(src));
+            JsonElement payloadElement = src.getGsonForPayload().toJsonTree(src.getPayload(), src.getPayloadType());
+            element.getAsJsonObject().add("payload", payloadElement);
+            return element;
+        }
     }
 
     /**
@@ -98,18 +137,11 @@ public abstract class Message<T> {
     }
 
     /**
-     * 将消息内容序列化为字符串，子类必须实现
+     * 获得用于将消息内容进行序列化的Gson对象，子类必须实现
      *
      * @return
      */
-    protected abstract String serializerPayload();
-
-    /**
-     * 通过字符串反序列化出消息内容，子类必须实现
-     *
-     * @param json
-     */
-    protected abstract void deserializerPayload(String json);
+    protected abstract Gson getGsonForPayload();
 
     public String getId() {
         return mId;
@@ -155,6 +187,10 @@ public abstract class Message<T> {
         return mPermanent;
     }
 
+    public void setPermanent(boolean permanent) {
+        mPermanent = permanent;
+    }
+
     public DateTime getCreateTime() {
         return mCreateTime;
     }
@@ -171,61 +207,67 @@ public abstract class Message<T> {
         mExpireTime = expireTime;
     }
 
+    public int getVersion() {
+        return mVersion;
+    }
+
+    public void setVersion(int version) {
+        mVersion = version;
+    }
+
+    public T getPayload() {
+        return mPayload;
+    }
+
+    public void setPayload(T payload) {
+        mPayload = payload;
+    }
+
+    /**
+     * 获得装载内容的类型
+     *
+     * @return
+     */
+    public Class<T> getPayloadType() {
+        ParameterizedType pType = (ParameterizedType) getClass().getGenericSuperclass();
+        return (Class) pType.getActualTypeArguments()[0];
+    }
+
+    @Expose
     @SerializedName("id")
     private String mId;
 
+    @Expose
     @SerializedName("type")
     private MessageType mType;
 
+    @Expose
     @SerializedName("fromUid")
     private Long mFromUid;
 
     @Expose(serialize = false, deserialize = false)
     private Channel mChannel;
 
+    @Expose
     @SerializedName("state")
     private byte mState;
 
+    @Expose
     @SerializedName("isPersistent")
     private boolean mPermanent;
 
+    @Expose
     @SerializedName("createTime")
     private DateTime mCreateTime;
 
+    @Expose
     @SerializedName("validity")
     private DateTime mExpireTime;
 
-    @SerializedName("xxx")
-    private T xxx;
+    @Expose
+    @SerializedName("version")
+    private int mVersion;
 
-    private static class MessageSerializer implements JsonSerializer<Message>, JsonDeserializer<Message> {
-        @Override
-        public Message deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(DateTime.class, new UnixDateTimeDeSerializer())
-                    .disableInnerClassSerialization()
-                    .create();
-            Message msg = gson.fromJson(json, typeOfT);
-            try {
-                String payloadString = json.getAsJsonObject().get("payload").getAsString();
-                msg.deserializerPayload(payloadString);
-            } catch (Exception e) {
-                Log.e(TAG, "parse payload error", e);
-            }
-            return msg;
-        }
-
-        @Override
-        public JsonElement serialize(Message src, Type typeOfSrc, JsonSerializationContext context) {
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(DateTime.class, new UnixDateTimeDeSerializer())
-                    .disableInnerClassSerialization()
-                    .create();
-            JsonParser parser = new JsonParser();
-            JsonElement element = parser.parse(gson.toJson(src));
-            element.getAsJsonObject().addProperty("payload", src.serializerPayload());
-            return element;
-        }
-    }
-
+    @Expose(serialize = false, deserialize = false)
+    private T mPayload;
 }
