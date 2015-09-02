@@ -3,10 +3,10 @@ package com.cpiz.android.playground;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.cpiz.android.playground.R;
 import com.trello.rxlifecycle.components.RxActivity;
 
 /**
@@ -21,7 +21,8 @@ public abstract class BaseTestActivity extends RxActivity implements View.OnClic
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.button_text_activity);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        setContentView(R.layout.base_activity);
 
         mButton = (Button) findViewById(R.id.button);
         mButton.setOnClickListener(this);
@@ -67,6 +68,10 @@ public abstract class BaseTestActivity extends RxActivity implements View.OnClic
 
     public EditText getEditText() {
         return mEditText;
+    }
+
+    public void clearOutput() {
+        mEditText.getText().clear();
     }
 
     public void appendLine(String str) {
