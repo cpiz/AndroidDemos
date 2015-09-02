@@ -1,6 +1,5 @@
 package com.cpiz.android.playground.view;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -88,6 +87,7 @@ public class MainActivity extends ListActivity {
     private void initTestActions() {
         mTestActions.add(new TestAction(MainActivity.class));
         mTestActions.add(new TestAction(RxBusTestActivity.class));
+        mTestActions.add(new TestAction(GsonMessageTestActivity.class));
     }
 
     @Override

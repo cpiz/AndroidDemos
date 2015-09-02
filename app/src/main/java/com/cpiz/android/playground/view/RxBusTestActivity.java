@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.cpiz.android.playground.BaseTestActivity;
 import com.cpiz.android.utils.RxBus;
 
 import rx.functions.Action0;
@@ -12,7 +13,7 @@ import rx.functions.Action1;
 /**
  * Created by caijw on 2015/8/31.
  */
-public class RxBusTestActivity extends SimpleTestActivity {
+public class RxBusTestActivity extends BaseTestActivity {
     private static final String TAG = "RxBusTestActivity";
 
     @Override
@@ -25,15 +26,6 @@ public class RxBusTestActivity extends SimpleTestActivity {
                 "--------------------\n");
 
         RxBus.getDefault().post(new TestEvent("test 0"));   // post before register
-
-        getButton().setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RxBus.getDefault().post(new TestEvent("test 1"));
-                RxBus.getDefault().post(null);
-                RxBus.getDefault().post(new TestEvent("test 2"));
-            }
-        });
 
         RxBus.getDefault().registerOnActivity(TestEvent.class, this)
                 .doOnSubscribe(new Action0() {
@@ -57,7 +49,7 @@ public class RxBusTestActivity extends SimpleTestActivity {
                 .subscribe(new Action1<TestEvent>() {
                     @Override
                     public void call(TestEvent testEvent) {
-                        getEditText().append(String.format("Got event[%s] registerOnActivity\n", testEvent.getEvent()));
+                        appendLine(String.format("Got event[%s] registerOnActivity", testEvent.getEvent()));
                     }
                 });
 
@@ -83,9 +75,16 @@ public class RxBusTestActivity extends SimpleTestActivity {
                 .subscribe(new Action1<TestEvent>() {
                     @Override
                     public void call(TestEvent testEvent) {
-                        getEditText().append(String.format("Got event[%s] registerOnView\n", testEvent.getEvent()));
+                        appendLine(String.format("Got event[%s] registerOnView", testEvent.getEvent()));
                     }
                 });
+    }
+
+    @Override
+    public void onClick(View v) {
+        RxBus.getDefault().post(new TestEvent("test 1"));
+        RxBus.getDefault().post(null);
+        RxBus.getDefault().post(new TestEvent("test 2"));
     }
 
     class TestEvent {
