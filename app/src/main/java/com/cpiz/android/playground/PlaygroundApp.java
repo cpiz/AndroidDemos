@@ -39,7 +39,6 @@ public class PlaygroundApp extends Application {
      * 在这定义要试验的功能，或启动新的 ACTIVITY
      */
     private void initTestActions() {
-        mTestActions.add(new TestAction(MainActivity.class));
         mTestActions.add(new TestAction(RxBusTestActivity.class));
         mTestActions.add(new TestAction(JsonMessageTestActivity.class));
     }
