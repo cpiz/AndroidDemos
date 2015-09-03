@@ -1,84 +1,83 @@
 package com.cpiz.android.playground;
 
 import android.app.ListActivity;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends ListActivity {
+    private static final String TAG = "MainActivity";
 
-    BaseAdapter mAdapter = new BaseAdapter() {
-        public List<TestAction> getActions() {
-            return PlaygroundApp.getInstance().getTestActions();
-        }
+    private List<TestAction> mTestActions = new ArrayList<>();
 
-        @Override
-        public int getCount() {
-            return getActions().size();
-        }
-
-        @Override
-        public TestAction getItem(int position) {
-            return getActions().get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return getActions().get(position).hashCode();
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = new Button(MainActivity.this);
-            }
-            Button btn = (Button) convertView;
-            btn.setText(getItem(position).getName());
-            btn.setAllCaps(false);
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    getItem(position).getAction().run();
+    private void loadAppActivities() {
+        try {
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_ACTIVITIES);
+            ActivityInfo[] activities = packageInfo.activities;
+            for (ActivityInfo activity : activities) {
+                try {
+                    Log.i(TAG, String.format("add activity: %s", activity.name));
+                    mTestActions.add(new TestAction(Class.forName(activity.name)));
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
-            });
-
-            return btn;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
-    };
+
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        setListAdapter(mAdapter);
-        mAdapter.notifyDataSetChanged();
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+        loadAppActivities();
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        setListAdapter(new BaseAdapter() {
+            @Override
+            public int getCount() {
+                return mTestActions.size();
+            }
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+            @Override
+            public TestAction getItem(int position) {
+                return mTestActions.get(position);
+            }
 
-        return super.onOptionsItemSelected(item);
+            @Override
+            public long getItemId(int position) {
+                return mTestActions.get(position).hashCode();
+            }
+
+            @Override
+            public View getView(final int position, View convertView, ViewGroup parent) {
+                if (convertView == null) {
+                    convertView = new Button(MainActivity.this);
+                }
+                Button btn = (Button) convertView;
+                btn.setText(getItem(position).getName());
+                btn.setAllCaps(false);
+                btn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        getItem(position).getAction().run();
+                    }
+                });
+
+                return btn;
+            }
+        });
     }
 }

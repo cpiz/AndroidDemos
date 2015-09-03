@@ -3,6 +3,8 @@
     package="com.cpiz.android.playground"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".PlaygroundApp"
         android:allowBackup="true"
@@ -20,6 +22,7 @@
 
         <activity android:name=".RxBusTest.RxBusTestActivity"/>
         <activity android:name=".JsonMessageTest.JsonMessageTestActivity"/>
+        <activity android:name=".RetrofitTest.RetrofitTestActivity"/>
     </application>
 
 </manifest>

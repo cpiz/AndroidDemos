@@ -10,12 +10,15 @@ import android.widget.EditText;
 import com.trello.rxlifecycle.components.RxActivity;
 
 /**
+ * 测试用Activity基类
+ *
  * Created by caijw on 2015/8/31.
  */
-public abstract class BaseTestActivity extends RxActivity implements View.OnClickListener {
+public abstract class BaseTestActivity extends RxActivity {
     private static final String TAG = "BaseTestActivity";
 
-    private Button mButton;
+    private Button mLeftBtn;
+    private Button mRightBtn;
     private EditText mEditText;
 
     @Override
@@ -24,8 +27,21 @@ public abstract class BaseTestActivity extends RxActivity implements View.OnClic
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         setContentView(R.layout.base_activity);
 
-        mButton = (Button) findViewById(R.id.button);
-        mButton.setOnClickListener(this);
+        mLeftBtn = (Button) findViewById(R.id.btnLeft);
+        mLeftBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onLeftClick();
+            }
+        });
+
+        mRightBtn = (Button) findViewById(R.id.btnRight);
+        mRightBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onRightClick();
+            }
+        });
 
         mEditText = (EditText) findViewById(R.id.editText);
 
@@ -62,15 +78,25 @@ public abstract class BaseTestActivity extends RxActivity implements View.OnClic
         Log.d(TAG, "onDestroy");
     }
 
-    public Button getButton() {
-        return mButton;
+    public abstract void onLeftClick();
+
+    public void onRightClick() {
+        clearEdit();
     }
 
-    public EditText getEditText() {
+    public Button getLeftBtn() {
+        return mLeftBtn;
+    }
+
+    public Button getRightBtn() {
+        return mRightBtn;
+    }
+
+    public EditText getEdit() {
         return mEditText;
     }
 
-    public void clearOutput() {
+    public void clearEdit() {
         mEditText.getText().clear();
     }
 

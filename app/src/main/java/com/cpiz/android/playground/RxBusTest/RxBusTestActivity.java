@@ -2,7 +2,6 @@ package com.cpiz.android.playground.RxBusTest;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 
 import com.cpiz.android.playground.BaseTestActivity;
 import com.cpiz.android.utils.RxBus;
@@ -11,6 +10,8 @@ import rx.functions.Action0;
 import rx.functions.Action1;
 
 /**
+ * 实现一个基于RxBus的事件总线
+ *
  * Created by caijw on 2015/8/31.
  */
 public class RxBusTestActivity extends BaseTestActivity {
@@ -20,7 +21,7 @@ public class RxBusTestActivity extends BaseTestActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getEditText().setText("Click button to post test events, " +
+        getEdit().setText("Click button to post test events, " +
                 "register and filter the event type, " +
                 "then append the event content into edit text\n" +
                 "--------------------\n");
@@ -53,7 +54,7 @@ public class RxBusTestActivity extends BaseTestActivity {
                     }
                 });
 
-        RxBus.getDefault().registerOnView(TestEvent.class, getButton())
+        RxBus.getDefault().registerOnView(TestEvent.class, getLeftBtn())
                 .doOnSubscribe(new Action0() {
                     @Override
                     public void call() {
@@ -86,7 +87,7 @@ public class RxBusTestActivity extends BaseTestActivity {
     }
 
     @Override
-    public void onClick(View v) {
+    public void onLeftClick() {
         RxBus.getDefault().post(new TestEvent("test 1"));
         RxBus.getDefault().post(null);
         RxBus.getDefault().post(new TestEvent("test 2"));

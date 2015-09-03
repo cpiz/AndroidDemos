@@ -1,7 +1,6 @@
 package com.cpiz.android.playground.JsonMessageTest;
 
 import android.os.Bundle;
-import android.view.View;
 
 import com.cpiz.android.playground.BaseTestActivity;
 import com.cpiz.android.utils.RxBus;
@@ -9,6 +8,8 @@ import com.cpiz.android.utils.RxBus;
 import rx.functions.Action1;
 
 /**
+ * 实现了一个通用的消息包装类，使用Gson序列化反序列化对象
+ *
  * Created by caijw on 2015/9/1.
  */
 public class JsonMessageTestActivity extends BaseTestActivity {
@@ -30,8 +31,8 @@ public class JsonMessageTestActivity extends BaseTestActivity {
     }
 
     @Override
-    public void onClick(View v) {
-        clearOutput();
+    public void onLeftClick() {
+        clearEdit();
 
         final String srcJson = "{\"id\":\"ididididid\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":{\"orderId\":\"ooooooorderiiiiid\",\"y\":456}}";
         Message msg = Message.fromJson(srcJson);
