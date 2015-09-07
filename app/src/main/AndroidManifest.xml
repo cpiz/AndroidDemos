@@ -4,6 +4,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name=".PlaygroundApp"
@@ -23,6 +25,7 @@
         <activity android:name=".RxBusTest.RxBusTestActivity"/>
         <activity android:name=".JsonMessageTest.JsonMessageTestActivity"/>
         <activity android:name=".RetrofitTest.RetrofitTestActivity"/>
+        <activity android:name=".OkHttpSpeedLimit.OkHttpTestActivity"/>
     </application>
 
 </manifest>
