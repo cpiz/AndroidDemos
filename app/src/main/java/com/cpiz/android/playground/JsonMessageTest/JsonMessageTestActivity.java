@@ -4,6 +4,10 @@ import android.os.Bundle;
 
 import com.cpiz.android.playground.BaseTestActivity;
 import com.cpiz.android.utils.RxBus;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.util.List;
 
 import rx.functions.Action1;
 
@@ -38,6 +42,15 @@ public class JsonMessageTestActivity extends BaseTestActivity {
         Message msg = Message.fromJson(srcJson);
         RxBus.getDefault().post(msg);
         appendLine(String.format("post a message[%s]", msg.getClass().getSimpleName()));
+
+        final String srcJsonArray = "[{\"id\":\"id1\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":{\"orderId\":\"ooooooorderid1\"}},{\"id\":\"id2\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":{\"orderId\":\"ooooooorderid2\"}},{\"id\":\"id3\",\"state\":0,\"type\":1,\"isPersistent\":true,\"fromUid\":50013856,\"validity\":1440413154,\"createTime\":1440413154,\"payload\":{\"orderId\":\"ooooooorderid3\"}}]";
+        List<Message> listMsg = Message.listFromJson(srcJsonArray);
+
+        Gson gson = new GsonBuilder()
+                .registerTypeHierarchyAdapter(Message.class, new Message.MessageJsonAdapter())
+                .create();
+        Message msg2 = gson.fromJson(srcJson, Message.class);
+        String desJson = gson.toJson(msg2);
 
         final int times = 1000;
         long startTime, stopTime;

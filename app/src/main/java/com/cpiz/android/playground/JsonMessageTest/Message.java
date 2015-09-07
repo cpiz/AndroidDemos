@@ -4,16 +4,25 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import org.joda.time.DateTime;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 通知实体基类
@@ -39,6 +48,27 @@ public abstract class Message<T> {
         Remedy,         // 定时补偿
     }
 
+    public static class MessageJsonAdapter implements JsonSerializer, JsonDeserializer {
+        @Override
+        public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return Message.fromJson(json);
+        }
+
+        @Override
+        public JsonElement serialize(Object src, Type typeOfSrc, JsonSerializationContext context) {
+            if (src instanceof Message) {
+                Message msg = (Message) src;
+
+                JsonParser parser = new JsonParser();
+                JsonElement element = parser.parse(gGson.toJson(msg));
+                JsonElement payloadElement = msg.getPreferPayloadGson().toJsonTree(msg.getPayload(), msg.getPayloadType());
+                element.getAsJsonObject().add("payload", payloadElement);
+                return element;
+            }
+            return null;
+        }
+    }
+
     /**
      * 从Json字符串获得一个Message子类对象
      *
@@ -46,18 +76,55 @@ public abstract class Message<T> {
      * @return Message子类实例
      */
     public static Message fromJson(String json) {
+        return fromJson(new JsonParser().parse(json));
+    }
 
-        Message msg = null;
+    /**
+     * 从Json字符串获得一个Message列表
+     *
+     * @param json
+     * @return
+     */
+    public static List<Message> listFromJson(String json) {
+        List<Message> list = new ArrayList<>();
 
         try {
             JsonElement jsonElement = new JsonParser().parse(json);
-            if (jsonElement == null || !jsonElement.isJsonObject()) {
-                throw new InvalidParameterException(String.format("[%s] is not a json string", json));
+            if (!jsonElement.isJsonArray()) {
+                throw new InvalidParameterException(String.format("[%s] is not a json array", json));
             }
 
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonArray array = jsonElement.getAsJsonArray();
+            for (int i = 0; i < array.size(); ++i) {
+                Message msg = Message.fromJson(array.get(i));
+                if (msg != null) {
+                    list.add(msg);
+                }
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, String.format("deserialize Message from json failed, error=\"%s\"", ex), ex);
+        }
+
+        return list;
+    }
+
+    /**
+     * 从Json对象获得一个Message子类对象
+     *
+     * @param json Json对象
+     * @return Message子类实例
+     */
+    private static Message fromJson(JsonElement json) {
+        Message msg = null;
+
+        try {
+            if (json == null || !json.isJsonObject()) {
+                throw new InvalidParameterException("element is not a json object");
+            }
+
+            JsonObject jsonObject = json.getAsJsonObject();
             if (!jsonObject.has("type")) {
-                throw new InvalidParameterException(String.format("[%s] has no \"type\" property", json));
+                throw new InvalidParameterException("element has no \"type\" field");
             }
 
             int type = jsonObject.get("type").getAsInt();
