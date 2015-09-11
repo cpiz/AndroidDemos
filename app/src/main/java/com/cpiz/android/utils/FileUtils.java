@@ -1,6 +1,8 @@
 package com.cpiz.android.utils;
 
+import android.os.Environment;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,7 +14,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -48,6 +52,7 @@ import java.util.List;
  * @author <a href="http://www.trinea.cn" target="_blank">Trinea</a> 2012-5-12
  */
 public class FileUtils {
+    private static final String TAG = "FileUtils";
 
     public final static String FILE_EXTENSION_SEPARATOR = ".";
 
@@ -186,7 +191,7 @@ public class FileUtils {
     /**
      * write file
      *
-     * @param file the file to be opened for writing.
+     * @param filePath the file to be opened for writing.
      * @param stream the input stream
      * @param append if <code>true</code>, then bytes will be written to the end of the file rather than the beginning
      * @return return true
@@ -571,5 +576,45 @@ public class FileUtils {
 
         File file = new File(path);
         return (file.exists() && file.isFile() ? file.length() : -1);
+    }
+
+    public static File createTempImageFile(String postfix) {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp;
+        if (postfix != null) {
+            imageFileName += "_" + postfix;
+        }
+
+        File storageDirFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        storageDirFile = new File(storageDirFile.getAbsolutePath());
+        try {
+            if (!storageDirFile.exists()) {
+                if (storageDirFile.mkdirs()) {
+                    Log.d(TAG, "Create dir success: " + storageDirFile.getAbsolutePath());
+                } else {
+                    Log.w(TAG, "Create dir failed: " + storageDirFile.getAbsolutePath());
+                    return null;
+                }
+            }
+
+            Log.d(TAG, String.format("File name: %s, directory: %s", imageFileName, storageDirFile.getAbsolutePath()));
+
+            File image = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".jpg",         /* suffix */
+                    storageDirFile      /* directory */
+            );
+
+            // Save a file: path for use with ACTION_VIEW intents
+            String path = image.getAbsolutePath();
+
+            Log.d(TAG, "Picture path: " + path);
+
+            return image;
+        } catch (IOException ioe) {
+            Log.w(TAG, "create image file failed.", ioe);
+            return null;
+        }
     }
 }

@@ -1,0 +1,119 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <com.cpiz.android.playground.TakePicture.CameraSurfaceView
+        android:id="@+id/cameraSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <RelativeLayout
+        android:id="@+id/title_bar"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:background="#252525">
+
+        <ImageButton
+            android:id="@+id/title_back_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentTop="true"
+            android:background="@null"
+            android:gravity="center"
+            android:src="@drawable/icon_back"/>
+    </RelativeLayout>
+
+    <com.cpiz.android.controls.FixedRatioLayout
+        android:id="@+id/preview_clip_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/title_bar"
+        app:heightRatio="3"
+        app:widthRatio="4">
+
+        <com.cpiz.android.playground.TakePicture.cropper.CropImageView
+            android:id="@+id/crop_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"/>
+    </com.cpiz.android.controls.FixedRatioLayout>
+
+    <!--Control area-->
+    <LinearLayout
+        android:id="@+id/camera_control_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/preview_clip_layout"
+        android:background="#252525"
+        android:orientation="vertical">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:id="@+id/galleryBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@null"
+            android:padding="10dp"
+            android:src="@drawable/gallery_btn_bg"/>
+
+        <ImageButton
+            android:id="@+id/cancel_crop_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@null"
+            android:padding="10dp"
+            android:src="@drawable/crop_cancel_btn_bg"
+            android:visibility="gone"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:id="@+id/takePicBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@null"
+            android:src="@drawable/take_picture_btn_bg"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <CheckBox
+            android:id="@+id/flashToggleCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/flash_toggle_btn_bg"
+            android:button="@null"
+            android:padding="10dp"/>
+
+        <ImageButton
+            android:id="@+id/confirm_crop_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@null"
+            android:padding="10dp"
+            android:src="@drawable/crop_confirm_btn_bg"
+            android:visibility="gone"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+    </LinearLayout>
+</RelativeLayout>

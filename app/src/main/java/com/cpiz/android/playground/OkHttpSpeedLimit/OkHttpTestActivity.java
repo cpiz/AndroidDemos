@@ -5,6 +5,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import com.cpiz.android.playground.BaseTestActivity;
+import com.cpiz.android.playground.PlayHelper;
 import com.facebook.stetho.okhttp.StethoInterceptor;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.MultipartBuilder;
@@ -30,7 +31,7 @@ public class OkHttpTestActivity extends BaseTestActivity {
                 OkHttpClient client = new OkHttpClient();
                 client.networkInterceptors().add(new StethoInterceptor());
 
-                String imagePath = getRecentPicture();
+                String imagePath = PlayHelper.getLatestPicture(OkHttpTestActivity.this);
 
                 RequestBody body = new MultipartBuilder()
                         .addFormDataPart("file", imagePath, LimitRequestBody.create(MediaType.parse("*/*"), new File(imagePath)))
@@ -53,29 +54,5 @@ public class OkHttpTestActivity extends BaseTestActivity {
                 }
             }
         }).start();
-    }
-
-    public String getRecentPicture() {
-        String filePath = null;
-
-        // Find the last picture
-        String[] projection = new String[]{
-                MediaStore.Images.ImageColumns._ID,
-                MediaStore.Images.ImageColumns.DATA,
-                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME,
-                MediaStore.Images.ImageColumns.DATE_TAKEN,
-                MediaStore.Images.ImageColumns.MIME_TYPE
-        };
-        final Cursor cursor = getContentResolver()
-                .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null,
-                        null, MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC");
-
-        // Put it in the image view
-        if (cursor.moveToFirst()) {
-            filePath = cursor.getString(1);
-        }
-        cursor.close();
-
-        return filePath;
     }
 }
