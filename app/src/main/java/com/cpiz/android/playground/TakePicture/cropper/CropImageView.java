@@ -14,7 +14,6 @@
 package com.cpiz.android.playground.TakePicture.cropper;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -51,8 +50,10 @@ public class CropImageView extends FrameLayout {
     public static final boolean DEFAULT_FIXED_ASPECT_RATIO = false;
     public static final int DEFAULT_ASPECT_RATIO_X = 1;
     public static final int DEFAULT_ASPECT_RATIO_Y = 1;
+    public static final int DEFAULT_SCALE_TYPE = 1;
 
     private static final int DEFAULT_IMAGE_RESOURCE = 0;
+    private static final ImageView.ScaleType[] VALID_SCALE_TYPES = new ImageView.ScaleType[]{ImageView.ScaleType.CENTER_INSIDE, ImageView.ScaleType.FIT_CENTER};
 
     private static final String DEGREES_ROTATED = "DEGREES_ROTATED";
 
@@ -71,6 +72,7 @@ public class CropImageView extends FrameLayout {
     private int mAspectRatioX = DEFAULT_ASPECT_RATIO_X;
     private int mAspectRatioY = DEFAULT_ASPECT_RATIO_Y;
     private int mImageResource = DEFAULT_IMAGE_RESOURCE;
+    private ImageView.ScaleType mScaleType = VALID_SCALE_TYPES[DEFAULT_SCALE_TYPE];
 
     // Constructors ////////////////////////////////////////////////////////////
 
@@ -81,6 +83,20 @@ public class CropImageView extends FrameLayout {
 
     public CropImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+//        TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.CropImageView, 0, 0);
+//        try {
+//            mGuidelines = ta.getInteger(R.styleable.CropImageView_guidelines, DEFAULT_GUIDELINES);
+//            mFixAspectRatio = ta.getBoolean(R.styleable.CropImageView_fixAspectRatio,
+//                    DEFAULT_FIXED_ASPECT_RATIO);
+//            mAspectRatioX = ta.getInteger(R.styleable.CropImageView_aspectRatioX, DEFAULT_ASPECT_RATIO_X);
+//            mAspectRatioY = ta.getInteger(R.styleable.CropImageView_aspectRatioY, DEFAULT_ASPECT_RATIO_Y);
+//            mImageResource = ta.getResourceId(R.styleable.CropImageView_imageResource, DEFAULT_IMAGE_RESOURCE);
+//            mScaleType = VALID_SCALE_TYPES[ta.getInt(R.styleable.CropImageView_scaleType, DEFAULT_SCALE_TYPE)];
+//        } finally {
+//            ta.recycle();
+//        }
+
         init(context);
     }
 
@@ -124,7 +140,7 @@ public class CropImageView extends FrameLayout {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 
         if (mBitmap != null) {
-            final Rect bitmapRect = ImageViewUtil.getBitmapRectCenterInside(mBitmap, this);
+            final Rect bitmapRect = ImageViewUtil.getBitmapRect(mBitmap, this, mScaleType);
             mCropOverlayView.setBitmapRect(bitmapRect);
         } else {
             mCropOverlayView.setBitmapRect(EMPTY_RECT);
@@ -188,10 +204,14 @@ public class CropImageView extends FrameLayout {
             mLayoutWidth = width;
             mLayoutHeight = height;
 
-            final Rect bitmapRect = ImageViewUtil.getBitmapRectCenterInside(mBitmap.getWidth(),
-                    mBitmap.getHeight(),
-                    mLayoutWidth,
-                    mLayoutHeight);
+//            final Rect bitmapRect = ImageViewUtil.getBitmapRect(mBitmap.getWidth(),
+//                    mBitmap.getHeight(),
+//                    mLayoutWidth,
+//                    mLayoutHeight,
+//                    mScaleType);
+//            mCropOverlayView.setBitmapRect(bitmapRect);
+
+            final Rect bitmapRect = ImageViewUtil.getBitmapRect(mBitmap, this, mScaleType);
             mCropOverlayView.setBitmapRect(bitmapRect);
 
             // MUST CALL THIS
@@ -238,13 +258,6 @@ public class CropImageView extends FrameLayout {
         mBitmap = bitmap;
         mImageView.setImageBitmap(mBitmap);
 
-        if (mBitmap != null) {
-            mCropOverlayView.setInitialAttributeValues(mGuidelines, mFixAspectRatio, mAspectRatioX, mAspectRatioY);
-            mCropOverlayView.setBitmapRect(ImageViewUtil.getBitmapRectCenterInside(mBitmap, this));
-        } else {
-            mCropOverlayView.setBitmapRect(EMPTY_RECT);
-        }
-
         if (mCropOverlayView != null) {
             mCropOverlayView.resetCropOverlayView();
         }
@@ -252,7 +265,7 @@ public class CropImageView extends FrameLayout {
 
     /**
      * Sets a Bitmap and initializes the image rotation according to the EXIT data.
-     * <p>
+     * <p/>
      * The EXIF can be retrieved by doing the following:
      * <code>ExifInterface exif = new ExifInterface(path);</code>
      *
@@ -352,7 +365,7 @@ public class CropImageView extends FrameLayout {
             return mBitmap;
         }
 
-        final Rect displayedImageRect = ImageViewUtil.getBitmapRectCenterInside(mBitmap, mImageView);
+        final Rect displayedImageRect = ImageViewUtil.getBitmapRect(mBitmap, mImageView, mScaleType);
 
         // Get the scale factor between the actual Bitmap dimensions and the
         // displayed dimensions for width.
@@ -399,7 +412,7 @@ public class CropImageView extends FrameLayout {
             return new RectF(0, 0, mBitmap.getWidth(), mBitmap.getHeight());
         }
 
-        final Rect displayedImageRect = ImageViewUtil.getBitmapRectCenterInside(mBitmap, mImageView);
+        final Rect displayedImageRect = ImageViewUtil.getBitmapRect(mBitmap, mImageView, mScaleType);
 
         // Get the scale factor between the actual Bitmap dimensions and the
         // displayed dimensions for width.
@@ -511,6 +524,11 @@ public class CropImageView extends FrameLayout {
         mDegreesRotated = mDegreesRotated % 360;
     }
 
+    private void setScaleType(ImageView.ScaleType scaleType) {
+        mScaleType = scaleType;
+        if (mImageView != null) mImageView.setScaleType(mScaleType);
+    }
+
     // Private Methods /////////////////////////////////////////////////////////
 
     private void init(Context context) {
@@ -552,7 +570,7 @@ public class CropImageView extends FrameLayout {
         }
 
         mImageView = new ImageView(context);
-        mImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        mImageView.setScaleType(mScaleType);
         mImageView.setAdjustViewBounds(true);
         addView(mImageView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 

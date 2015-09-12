@@ -11,31 +11,59 @@
         android:layout_height="match_parent"/>
 
     <RelativeLayout
-        android:id="@+id/title_bar"
+        android:id="@+id/titleBar"
         android:layout_width="48dp"
         android:layout_height="match_parent"
-        android:background="#252525">
+        android:background="#252525"
+        android:clickable="true">
 
-        <ImageButton
-            android:id="@+id/title_back_btn"
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/backBtn"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_alignParentTop="true"
             android:background="@null"
-            android:gravity="center"
-            android:src="@drawable/icon_back"/>
+            android:scaleType="center"
+            android:src="@drawable/icon_back_arrow"
+            app:tint="@color/common_image_btn_icon_selector"/>
+
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/rotateBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentBottom="true"
+            android:background="@null"
+            android:scaleType="center"
+            android:src="@drawable/icon_rotate"
+            android:visibility="gone"
+            app:tint="@color/common_image_btn_icon_selector"/>
     </RelativeLayout>
 
     <com.cpiz.android.controls.FixedRatioLayout
-        android:id="@+id/preview_clip_layout"
+        android:id="@+id/previewClipLayout"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_toRightOf="@id/title_bar"
+        android:layout_toRightOf="@id/titleBar"
         app:heightRatio="3"
         app:widthRatio="4">
 
+        <TextView
+            android:id="@+id/horizontalHintText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/keep_horizontal_edit_text_bg"
+            android:paddingBottom="6dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="6dp"
+            android:text="@string/please_keep_horizontal"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:visibility="invisible"/>
+
         <com.cpiz.android.playground.TakePicture.cropper.CropImageView
-            android:id="@+id/crop_image_view"
+            android:id="@+id/cropImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="invisible"/>
@@ -43,11 +71,12 @@
 
     <!--Control area-->
     <LinearLayout
-        android:id="@+id/camera_control_layout"
+        android:id="@+id/cameraControlLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_toRightOf="@id/preview_clip_layout"
+        android:layout_toRightOf="@id/previewClipLayout"
         android:background="#252525"
+        android:clickable="true"
         android:orientation="vertical">
 
         <View
@@ -55,61 +84,69 @@
             android:layout_height="0dp"
             android:layout_weight="1"/>
 
-        <ImageButton
+        <com.cpiz.android.controls.ImageButtonEx
             android:id="@+id/galleryBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:background="@null"
-            android:padding="10dp"
-            android:src="@drawable/gallery_btn_bg"/>
+            android:padding="20dp"
+            android:src="@drawable/icon_gallery"
+            app:tint="@color/common_image_btn_icon_selector"/>
 
-        <ImageButton
-            android:id="@+id/cancel_crop_btn"
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/cancelPictureBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:background="@null"
-            android:padding="10dp"
-            android:src="@drawable/crop_cancel_btn_bg"
-            android:visibility="gone"/>
+            android:padding="20dp"
+            android:src="@drawable/icon_cancel_picture"
+            android:visibility="gone"
+            app:tint="@color/common_image_btn_icon_selector"/>
 
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1"/>
 
-        <ImageButton
-            android:id="@+id/takePicBtn"
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/shutterBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:background="@null"
-            android:src="@drawable/take_picture_btn_bg"/>
+            android:padding="20dp"
+            android:src="@drawable/icon_shutter"
+            app:tint="@color/common_image_btn_icon_selector"/>
 
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1"/>
 
-        <CheckBox
-            android:id="@+id/flashToggleCheckBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:background="@drawable/flash_toggle_btn_bg"
-            android:button="@null"
-            android:padding="10dp"/>
-
-        <ImageButton
-            android:id="@+id/confirm_crop_btn"
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/cameraFlashBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:background="@null"
-            android:padding="10dp"
-            android:src="@drawable/crop_confirm_btn_bg"
-            android:visibility="gone"/>
+            android:padding="20dp"
+            android:src="@drawable/flash_toggle_btn_bg"
+            app:checkable="true"
+            app:tint="@color/common_image_btn_icon_selector"/>
+
+        <com.cpiz.android.controls.ImageButtonEx
+            android:id="@+id/confirmPictureBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@null"
+            android:padding="20dp"
+            android:src="@drawable/icon_confirm_picture"
+            android:visibility="gone"
+            app:checkable="true"
+            app:tint="@color/common_image_btn_icon_selector"/>
 
         <View
             android:layout_width="0dp"

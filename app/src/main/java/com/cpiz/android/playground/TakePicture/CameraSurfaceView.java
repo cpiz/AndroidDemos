@@ -76,7 +76,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private float mLastY;
     private float mLastZ;
     private long mLastMotionlessTime;
-    private boolean mCurrentFocused;
+    private boolean mIsFocused;
 
     private Paint mFocusPaint;
     private Paint mGuidesPaint;
@@ -229,7 +229,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                 }
             };
 
-            Log.v(TAG, "take picture step 0: call takePicture");
+            Log.d(TAG, "take picture step 0: call takePicture");
             mCamera.takePicture(shutterCallback, null, jpegCallback);
         }
     }
@@ -245,14 +245,14 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         options.inJustDecodeBounds = true;
         options.inPreferredConfig = Bitmap.Config.RGB_565;  // 照片数据，使用RGB_565足够，节约内存
         BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
-        Log.v(TAG, String.format("take picture step 1: picture original width = %d, height = %d", options.outWidth, options.outHeight));
+        Log.d(TAG, String.format("take picture step 1: picture original width = %d, height = %d", options.outWidth, options.outHeight));
         options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, MAX_PICTURE_SHORT_SIDE, MAX_PICTURE_SHORT_SIDE);
 
         // 解码图片
         options.inJustDecodeBounds = false;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
         Bitmap source = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
-        Log.v(TAG, String.format("take picture step 2: picture output width = %d, height = %d", options.outWidth, options.outHeight));
+        Log.d(TAG, String.format("take picture step 2: picture output width = %d, height = %d", options.outWidth, options.outHeight));
 
         // 根据 ClipRect 裁剪输出
         double outAspectRadio = (double) (mClipRect.width()) / mClipRect.height();
@@ -279,7 +279,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         Bitmap output = Bitmap.createBitmap(source, outX, outY, outWidth, outHeight);
         source.recycle();
 
-        Log.v(TAG, "take picture step 3: on bitmap cropped");
+        Log.d(TAG, "take picture step 3: on bitmap cropped");
         return output;
     }
 
@@ -320,7 +320,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.v(TAG, "surfaceDestroyed");
+        Log.d(TAG, "surfaceDestroyed");
 
         stopCamera();
     }
@@ -378,16 +378,15 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
         // 自动对焦处理
         long nowTime = System.currentTimeMillis();
-        if (mFocusState == FocusState.FOCUS_READY && !mCurrentFocused && delta > MOTIONLESS_ACC_IN_THRESHOLD) {
+        if (mFocusState == FocusState.FOCUS_READY && !mIsFocused && delta > MOTIONLESS_ACC_IN_THRESHOLD) {
             // 检测到摇晃，须要重新对焦
-            mCurrentFocused = false;
             mLastMotionlessTime = nowTime;
-        } else if (mFocusState == FocusState.FOCUS_READY && mCurrentFocused && delta > MOTIONLESS_ACC_OUT_THRESHOLD) {
+        } else if (mFocusState == FocusState.FOCUS_READY && mIsFocused && delta > MOTIONLESS_ACC_OUT_THRESHOLD) {
             // 处理同上，触发自动对焦后，为方便用户手动重新对焦，提高触发阀值
             Log.v(TAG, String.format("big shake detected = %f, reset focus!", delta));
-            mCurrentFocused = false;
+            mIsFocused = false;
             mLastMotionlessTime = nowTime;
-        } else if (!mIsTakingPicture && !mCurrentFocused && mLastMotionlessTime != 0 && nowTime - mLastMotionlessTime > MOTIONLESS_KEEP_TIME) {
+        } else if (!mIsTakingPicture && !mIsFocused && mLastMotionlessTime != 0 && nowTime - mLastMotionlessTime > MOTIONLESS_KEEP_TIME) {
             // 静止时间超过设定，自动触发中央对焦
             Log.v(TAG, String.format("delta = %f, auto refocus!", delta));
             try2Focus(mClipRect.centerX(), mClipRect.centerY(), false);
@@ -406,6 +405,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                     SensorManager.SENSOR_DELAY_GAME);
 
             mIsTakingPicture = false;
+            mIsFocused = false;
 
             setCameraDisplayOrientation();
             setBestPictureSize();
@@ -552,24 +552,24 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
     private ArrayList<Camera.Area> getCameraAreasFromPreview(float x, float y) {
         Matrix camera2prevMatrix = new Matrix();
-        Log.d(TAG, "camera2prevMatrix reset" + camera2prevMatrix.toString());
+        Log.v(TAG, "camera2prevMatrix reset" + camera2prevMatrix.toString());
         camera2prevMatrix.postRotate(0);
-        Log.d(TAG, "camera2prevMatrix postRotate(0)" + camera2prevMatrix.toString());
+        Log.v(TAG, "camera2prevMatrix postRotate(0)" + camera2prevMatrix.toString());
         camera2prevMatrix.postScale(getWidth() / 2000f, getHeight() / 2000f);
-        Log.d(TAG, String.format("camera2prevMatrix postScale(%f, %f) = %s", getWidth() / 2000f, getHeight() / 2000f, camera2prevMatrix.toString()));
+        Log.v(TAG, String.format("camera2prevMatrix postScale(%f, %f) = %s", getWidth() / 2000f, getHeight() / 2000f, camera2prevMatrix.toString()));
         camera2prevMatrix.postTranslate(getWidth() / 2f, getHeight() / 2f);
-        Log.d(TAG, String.format("camera2prevMatrix postTranslate(%f, %f) = %s", getWidth() / 2f, getHeight() / 2f, camera2prevMatrix.toString()));
+        Log.v(TAG, String.format("camera2prevMatrix postTranslate(%f, %f) = %s", getWidth() / 2f, getHeight() / 2f, camera2prevMatrix.toString()));
 
         Matrix preview2cameraMatrix = new Matrix();
         if (!camera2prevMatrix.invert(preview2cameraMatrix)) {
-            Log.d(TAG, "failed to invert matrix !");
+            Log.w(TAG, "failed to invert matrix !");
         }
-        Log.d(TAG, "preview2cameraMatrix " + preview2cameraMatrix.toString());
+        Log.v(TAG, "preview2cameraMatrix " + preview2cameraMatrix.toString());
 
         float[] coords = {x, y};
-        Log.d(TAG, "x => " + coords[0] + ", y => " + coords[1]);
+        Log.v(TAG, "x => " + coords[0] + ", y => " + coords[1]);
         preview2cameraMatrix.mapPoints(coords);
-        Log.d(TAG, "cx => " + coords[0] + ", cy => " + coords[1]);
+        Log.v(TAG, "cx => " + coords[0] + ", cy => " + coords[1]);
 
         Rect rect = new Rect();
         rect.left = (int) coords[0] - 50;
@@ -584,9 +584,9 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     }
 
     private void try2Focus(int x, int y, final boolean byTouch) {
-        mCurrentFocused = true;
+        mIsFocused = true;
         if (mCamera != null) {
-            Log.v(TAG, String.format("try to focus: x = %d, y = %d", x, y));
+            Log.d(TAG, String.format("try to focus: x = %d, y = %d", x, y));
 
             Camera.Parameters parameters = mCamera.getParameters();
             String focusMode = parameters.getFocusMode();
@@ -606,7 +606,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                 mCamera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
-                        Log.d(TAG, "autofocus complete: success -> " + success);
+                        Log.d(TAG, "auto focus complete: success -> " + success);
                         changeFocusState(success ? FocusState.FOCUS_COMPLETE : FocusState.FOCUS_FAILED);
                         if (success && byTouch) {
                             RingtonePlayer.Instance.playRingTone(R.raw.camera_focus, false);
@@ -614,7 +614,10 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                     }
                 });
             } catch (Exception e) {
-                Log.w(TAG, "autofocus failed", e);
+                // 手机剧烈晃动时可能导致
+                Log.w(TAG, "auto focus error", e);
+                mIsFocused = false;
+                changeFocusState(FocusState.FOCUS_READY);
             }
         }
     }

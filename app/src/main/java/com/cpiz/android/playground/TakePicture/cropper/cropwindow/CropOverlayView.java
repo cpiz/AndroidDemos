@@ -17,10 +17,12 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -119,6 +121,12 @@ public class CropOverlayView extends View {
     private float mCornerOffset;
     private float mCornerLength;
 
+    // double tap gesture detector
+    private RectF mDefaultEdgeRect = new RectF();
+    private RectF mPreviousEdgeRect = new RectF();
+    private GestureDetector mGestureDetector;
+
+
     // Constructors ////////////////////////////////////////////////////////////
 
     public CropOverlayView(Context context) {
@@ -138,6 +146,7 @@ public class CropOverlayView extends View {
 
         // Initialize the crop window here because we need the size of the view
         // to have been determined.
+        mPreviousEdgeRect.setEmpty();
         initCropWindow(mBitmapRect);
     }
 
@@ -180,6 +189,10 @@ public class CropOverlayView extends View {
             return false;
         }
 
+        // double tap
+        if (mGestureDetector.onTouchEvent(event))
+            return true;
+
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
@@ -219,7 +232,7 @@ public class CropOverlayView extends View {
      * Resets the crop overlay view.
      */
     public void resetCropOverlayView() {
-
+        mPreviousEdgeRect.setEmpty();
         if (initializedCropWindow) {
             initCropWindow(mBitmapRect);
             invalidate();
@@ -376,6 +389,12 @@ public class CropOverlayView extends View {
 
         // Sets guidelines to default until specified otherwise
         mGuidelines = CropImageView.DEFAULT_GUIDELINES;
+
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            public boolean onDoubleTap(MotionEvent e) {
+                return CropOverlayView.this.onDoubleTap(e);
+            }
+        });
     }
 
     /**
@@ -391,6 +410,9 @@ public class CropOverlayView extends View {
         if (initializedCropWindow == false)
             initializedCropWindow = true;
 
+        // reset aspect ratio
+        mTargetAspectRatio = ((float) mAspectRatioX) / mAspectRatioY;
+
         if (mFixAspectRatio) {
 
             // If the image aspect ratio is wider than the crop aspect ratio,
@@ -405,9 +427,7 @@ public class CropOverlayView extends View {
 
                 // Limits the aspect ratio to no less than 40 wide or 40 tall
                 final float cropWidth = Math.max(mMinCropLength,
-                        AspectRatioUtil.calculateWidth(Edge.TOP.getCoordinate(),
-                                Edge.BOTTOM.getCoordinate(),
-                                mTargetAspectRatio));
+                        AspectRatioUtil.calculateWidth(bitmapRect.top, bitmapRect.bottom, mTargetAspectRatio));
 
                 // Create new TargetAspectRatio if the original one does not fit
                 // the screen
@@ -452,6 +472,7 @@ public class CropOverlayView extends View {
             Edge.RIGHT.setCoordinate(bitmapRect.right - horizontalPadding);
             Edge.BOTTOM.setCoordinate(bitmapRect.bottom - verticalPadding);
         }
+        mDefaultEdgeRect.set(Edge.LEFT.getCoordinate(), Edge.TOP.getCoordinate(), Edge.RIGHT.getCoordinate(), Edge.BOTTOM.getCoordinate());
     }
 
     /**
@@ -638,5 +659,41 @@ public class CropOverlayView extends View {
             mPressedHandle.updateCropWindow(x, y, mBitmapRect, mSnapRadius, mMinCropLength);
         }
         invalidate();
+    }
+
+    /**
+     * 双击最大化选区
+     *
+     * @param e
+     * @return
+     */
+    private boolean onDoubleTap(MotionEvent e) {
+        // 判断是否双击在中间区域
+        final float left = Edge.LEFT.getCoordinate();
+        final float top = Edge.TOP.getCoordinate();
+        final float right = Edge.RIGHT.getCoordinate();
+        final float bottom = Edge.BOTTOM.getCoordinate();
+        if (Handle.CENTER != HandleUtil.getPressedHandle(e.getX(), e.getY(), left, top, right, bottom, mHandleRadius)) {
+            return false;
+        }
+
+        // 切换到默认尺寸 或 上一次尺寸
+        RectF currentEdgeRect = new RectF(left, top, right, bottom);
+        if (!currentEdgeRect.equals(mDefaultEdgeRect)) {
+            mPreviousEdgeRect.set(currentEdgeRect);
+            Edge.LEFT.setCoordinate(mDefaultEdgeRect.left);
+            Edge.TOP.setCoordinate(mDefaultEdgeRect.top);
+            Edge.RIGHT.setCoordinate(mDefaultEdgeRect.right);
+            Edge.BOTTOM.setCoordinate(mDefaultEdgeRect.bottom);
+        } else if (!mPreviousEdgeRect.isEmpty()) {
+            Edge.LEFT.setCoordinate(mPreviousEdgeRect.left);
+            Edge.TOP.setCoordinate(mPreviousEdgeRect.top);
+            Edge.RIGHT.setCoordinate(mPreviousEdgeRect.right);
+            Edge.BOTTOM.setCoordinate(mPreviousEdgeRect.bottom);
+        }
+
+        invalidate();
+
+        return true;
     }
 }

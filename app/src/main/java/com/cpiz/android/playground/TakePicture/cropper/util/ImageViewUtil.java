@@ -1,14 +1,14 @@
 /*
- * Copyright 2013, Edmodo, Inc. 
+ * Copyright 2013, Edmodo, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this work except in compliance with the License.
  * You may obtain a copy of the License in the LICENSE file, or at:
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" 
- * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language 
- * governing permissions and limitations under the License. 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS"
+ * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
  */
 
 package com.cpiz.android.playground.TakePicture.cropper.util;
@@ -24,50 +24,61 @@ import android.widget.ImageView;
 public class ImageViewUtil {
 
     /**
-     * Gets the rectangular position of a Bitmap if it were placed inside a View
-     * with scale type set to {@link ImageView#ScaleType #CENTER_INSIDE}.
-     * 
-     * @param bitmap the Bitmap
-     * @param view the parent View of the Bitmap
+     * Gets the rectangular position of a Bitmap if it were placed inside a View.
+     *
+     * @param bitmap    the Bitmap
+     * @param view      the parent View of the Bitmap
+     * @param scaleType the desired scale type
      * @return the rectangular position of the Bitmap
      */
-    public static Rect getBitmapRectCenterInside(Bitmap bitmap, View view) {
+    public static Rect getBitmapRect(Bitmap bitmap, View view, ImageView.ScaleType scaleType) {
 
         final int bitmapWidth = bitmap.getWidth();
         final int bitmapHeight = bitmap.getHeight();
         final int viewWidth = view.getWidth();
         final int viewHeight = view.getHeight();
 
-        return getBitmapRectCenterInsideHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+        switch (scaleType) {
+            default:
+            case CENTER_INSIDE:
+                return getBitmapRectCenterInsideHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+            case FIT_CENTER:
+                return getBitmapRectFitCenterHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+        }
     }
 
     /**
-     * Gets the rectangular position of a Bitmap if it were placed inside a View
-     * with scale type set to {@link ImageView#ScaleType #CENTER_INSIDE}.
-     * 
-     * @param bitmapWidth the Bitmap's width
+     * Gets the rectangular position of a Bitmap if it were placed inside a View.
+     *
+     * @param bitmapWidth  the Bitmap's width
      * @param bitmapHeight the Bitmap's height
-     * @param viewWidth the parent View's width
-     * @param viewHeight the parent View's height
+     * @param viewWidth    the parent View's width
+     * @param viewHeight   the parent View's height
+     * @param scaleType    the desired scale type
      * @return the rectangular position of the Bitmap
      */
-    public static Rect getBitmapRectCenterInside(int bitmapWidth,
-                                                 int bitmapHeight,
-                                                 int viewWidth,
-                                                 int viewHeight)
-    {
-        return getBitmapRectCenterInsideHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+    public static Rect getBitmapRect(int bitmapWidth,
+                                     int bitmapHeight,
+                                     int viewWidth,
+                                     int viewHeight, ImageView.ScaleType scaleType) {
+        switch (scaleType) {
+            default:
+            case CENTER_INSIDE:
+                return getBitmapRectCenterInsideHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+            case FIT_CENTER:
+                return getBitmapRectFitCenterHelper(bitmapWidth, bitmapHeight, viewWidth, viewHeight);
+        }
     }
 
     /**
      * Helper that does the work of the above functions. Gets the rectangular
      * position of a Bitmap if it were placed inside a View with scale type set
      * to {@link ImageView#ScaleType #CENTER_INSIDE}.
-     * 
-     * @param bitmapWidth the Bitmap's width
+     *
+     * @param bitmapWidth  the Bitmap's width
      * @param bitmapHeight the Bitmap's height
-     * @param viewWidth the parent View's width
-     * @param viewHeight the parent View's height
+     * @param viewWidth    the parent View's width
+     * @param viewHeight   the parent View's height
      * @return the rectangular position of the Bitmap
      */
     private static Rect getBitmapRectCenterInsideHelper(int bitmapWidth,
@@ -92,13 +103,11 @@ public class ImageViewUtil {
 
         // If either needs to be fixed, choose smallest ratio and calculate from
         // there
-        if (viewToBitmapWidthRatio != Double.POSITIVE_INFINITY || viewToBitmapHeightRatio != Double.POSITIVE_INFINITY)
-        {
+        if (viewToBitmapWidthRatio != Double.POSITIVE_INFINITY || viewToBitmapHeightRatio != Double.POSITIVE_INFINITY) {
             if (viewToBitmapWidthRatio <= viewToBitmapHeightRatio) {
                 resultWidth = viewWidth;
                 resultHeight = (bitmapHeight * resultWidth / bitmapWidth);
-            }
-            else {
+            } else {
                 resultHeight = viewHeight;
                 resultWidth = (bitmapWidth * resultHeight / bitmapHeight);
             }
@@ -117,16 +126,65 @@ public class ImageViewUtil {
         } else if (resultHeight == viewHeight) {
             resultX = (int) Math.round((viewWidth - resultWidth) / 2);
             resultY = 0;
-        }
-        else {
+        } else {
             resultX = (int) Math.round((viewWidth - resultWidth) / 2);
             resultY = (int) Math.round((viewHeight - resultHeight) / 2);
         }
 
         final Rect result = new Rect(resultX,
-                                     resultY,
-                                     resultX + (int) Math.ceil(resultWidth),
-                                     resultY + (int) Math.ceil(resultHeight));
+                resultY,
+                resultX + (int) Math.ceil(resultWidth),
+                resultY + (int) Math.ceil(resultHeight));
+
+        return result;
+    }
+
+    /**
+     * Helper that does the work of the above functions. Gets the rectangular
+     * position of a Bitmap if it were placed inside a View with scale type set
+     * to {@link ImageView.ScaleType#FIT_CENTER}.
+     *
+     * @param bitmapWidth  the Bitmap's width
+     * @param bitmapHeight the Bitmap's height
+     * @param viewWidth    the parent View's width
+     * @param viewHeight   the parent View's height
+     * @return the rectangular position of the Bitmap
+     */
+    private static Rect getBitmapRectFitCenterHelper(int bitmapWidth, int bitmapHeight, int viewWidth, int viewHeight) {
+        double resultWidth;
+        double resultHeight;
+        int resultX;
+        int resultY;
+
+        double viewToBitmapWidthRatio = (double) viewWidth / bitmapWidth;
+        double viewToBitmapHeightRatio = (double) viewHeight / bitmapHeight;
+
+        // If either needs to be fixed, choose smallest ratio and calculate from
+        // there
+        if (viewToBitmapWidthRatio <= viewToBitmapHeightRatio) {
+            resultWidth = viewWidth;
+            resultHeight = (bitmapHeight * resultWidth / bitmapWidth);
+        } else {
+            resultHeight = viewHeight;
+            resultWidth = (bitmapWidth * resultHeight / bitmapHeight);
+        }
+
+        // Calculate the position of the bitmap inside the ImageView.
+        if (resultWidth == viewWidth) {
+            resultX = 0;
+            resultY = (int) Math.round((viewHeight - resultHeight) / 2);
+        } else if (resultHeight == viewHeight) {
+            resultX = (int) Math.round((viewWidth - resultWidth) / 2);
+            resultY = 0;
+        } else {
+            resultX = (int) Math.round((viewWidth - resultWidth) / 2);
+            resultY = (int) Math.round((viewHeight - resultHeight) / 2);
+        }
+
+        final Rect result = new Rect(resultX,
+                resultY,
+                resultX + (int) Math.ceil(resultWidth),
+                resultY + (int) Math.ceil(resultHeight));
 
         return result;
     }

@@ -155,7 +155,7 @@ public class ImageButtonEx extends ImageButton implements Checkable {
      */
     @Override
     public void setOnClickListener(OnClickListener listener) {
-        mInternalOnClickListener = listener;
+        mExternalOnClickListener = listener;
     }
 
     /**
