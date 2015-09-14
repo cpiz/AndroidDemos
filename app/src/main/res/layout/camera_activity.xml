@@ -25,7 +25,7 @@
             android:background="@null"
             android:scaleType="center"
             android:src="@drawable/icon_back_arrow"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <com.cpiz.android.controls.ImageButtonEx
             android:id="@+id/rotateBtn"
@@ -36,7 +36,7 @@
             android:scaleType="center"
             android:src="@drawable/icon_rotate"
             android:visibility="gone"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
     </RelativeLayout>
 
     <com.cpiz.android.controls.FixedRatioLayout
@@ -92,7 +92,7 @@
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_gallery"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <com.cpiz.android.controls.ImageButtonEx
             android:id="@+id/cancelPictureBtn"
@@ -103,7 +103,7 @@
             android:padding="20dp"
             android:src="@drawable/icon_cancel_picture"
             android:visibility="gone"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <View
             android:layout_width="0dp"
@@ -118,7 +118,7 @@
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_shutter"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <View
             android:layout_width="0dp"
@@ -134,7 +134,7 @@
             android:padding="20dp"
             android:src="@drawable/flash_toggle_btn_bg"
             app:checkable="true"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <com.cpiz.android.controls.ImageButtonEx
             android:id="@+id/confirmPictureBtn"
@@ -146,7 +146,7 @@
             android:src="@drawable/icon_confirm_picture"
             android:visibility="gone"
             app:checkable="true"
-            app:tint="@color/common_image_btn_icon_selector"/>
+            app:tint="@color/common_image_btn_ex_tint_selector"/>
 
         <View
             android:layout_width="0dp"
