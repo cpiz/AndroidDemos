@@ -3,6 +3,8 @@ package com.cpiz.android.playground.TakePicture;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
@@ -13,12 +15,13 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.widget.CheckBox;
-import android.widget.ImageButton;
+import android.widget.TextView;
 
+import com.cpiz.android.controls.FixedRatioLayout;
 import com.cpiz.android.controls.ImageButtonEx;
 import com.cpiz.android.playground.R;
 import com.cpiz.android.playground.TakePicture.cropper.CropImageView;
@@ -31,16 +34,15 @@ import java.io.IOException;
 
 /**
  * 提供拍照、闪关灯、相册选择、二次确认、旋转、裁剪功能
- * <p/>
- * 使用 startActivityForResult 启动，可在 Intent 中 setData 指定图片存储路径，不指定则会自动创建路径
- * 通过 onActivityResult 的 Intent.getData 获得输出图片路径，getIntArrayExtra(PIC_SIZE) 可获得图片尺寸
- * <p/>
+ * 支持启动时通过Intent指定横竖屏模式、输入路径、输出路径、照片比例、导出质量
+ * 通过 onActivityResult 的 Intent.getData 获得输出图片路径，getIntArrayExtra(SIZE) 可获得图片尺寸
+ * <p>
+ * 请使用 PhotoHelper 调用此 Activity
+ * <p>
  * Created by caijw on 2015/9/12.
  */
 public class CameraActivity extends Activity {
     private static final String TAG = "CameraActivity";
-
-    public static final String PIC_SIZE = "PIC_SIZE";
 
     private static final int REQUEST_IMAGE_GALLERY = 1;
     private static final String SCHEME_FILE = "file";
@@ -48,8 +50,8 @@ public class CameraActivity extends Activity {
 
     private CameraSurfaceView mCameraSurfaceView;
     private CropImageView mCropImageView;
-    private View mHorizontalHintText;
-    private View mPreviewClipLayout;
+    private TextView mHorizontalHintText;
+    private FixedRatioLayout mPreviewClipLayout;
     private ImageButtonEx cameraFlashBtn;
     private ImageButtonEx mTakePhotoBtn;
     private ImageButtonEx mGalleryBtn;
@@ -57,48 +59,121 @@ public class CameraActivity extends Activity {
     private ImageButtonEx mConfirmCropBtn;
     private ImageButtonEx mRotateBtn;
 
-    private File mPictureFile;
+    enum SourceMode {
+        CropOnly,
+        Gallery,
+        CameraGallery
+    }
+
+    private SourceMode mSourceMode = SourceMode.CameraGallery;
+    private int mQuality = 70;
+    private boolean mPortrait = true;
+    private int mWidthRatio = 0;
+    private int mHeightRatio = 0;
+    private File mSourceFile = null;
+    private File mOutputFile = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(TAG, "Activity onCreate");
-
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.camera_activity);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        Uri fileUri = getIntent().getData();
-        if (fileUri != null) {
-            mPictureFile = new File(fileUri.getPath());
-        } else {
-            // 若无外部传入，则创建临时图片
-            mPictureFile = FileUtils.createTempImageFile(null);
+        // 按要求设置屏幕方向
+        mPortrait = getIntent().getBooleanExtra(PhotoHelper.PORTRAIT, true);
+        if (mPortrait && getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            Log.i(TAG, "Set screen orientation to portrait");
+        } else if (!mPortrait && getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            Log.i(TAG, "Set screen orientation to landscape");
         }
 
-        if (mPictureFile != null) {
-            Log.i(TAG, String.format("Set picture file=[%s]", mPictureFile.getAbsolutePath()));
+        // 获得图片采集比例
+        int[] ratio = getIntent().getIntArrayExtra(PhotoHelper.OUTPUT_RATIO);
+        if (ratio != null && ratio.length > 1) {
+            mWidthRatio = ratio[0];
+            mHeightRatio = ratio[1];
+        }
+
+        // 导出图像质量
+        mQuality = getIntent().getIntExtra(PhotoHelper.OUTPUT_QUALITY, 70);
+        if (mQuality <= 0 || mQuality >= 100) {
+            mQuality = 70;
+        }
+        Log.i(TAG, String.format("Set export quality to %d", mQuality));
+
+        // 获得原始图片来源
+        String sourcePath = getIntent().getStringExtra(PhotoHelper.SOURCE_PATH);
+        if (!TextUtils.isEmpty(sourcePath)) {
+            if (sourcePath.equals(PhotoHelper.SOURCE_OF_GALLERY)) {
+                // 从系统相册选择
+                mSourceMode = SourceMode.Gallery;
+                Log.i(TAG, "Set source from gallery");
+            } else {
+                // 指定文件
+                mSourceMode = SourceMode.CropOnly;
+                mSourceFile = new File(sourcePath);
+                Log.i(TAG, String.format("Set source file=%s", sourcePath));
+            }
+        }
+
+        // 获得图像输出路径
+        String outputPath = getIntent().getStringExtra(PhotoHelper.OUTPUT_PATH);
+        if (!TextUtils.isEmpty(outputPath)) {
+            mOutputFile = new File(outputPath);
+            Log.i(TAG, String.format("Set output file=%s", outputPath));
         } else {
-            ToastUtils.show(this, "Invalid image file");
+            // 若无外部传入，则创建临时图片
+            mOutputFile = FileUtils.createTempImageFile(null);
+            Log.i(TAG, String.format("Create output file=%s", mOutputFile.getAbsoluteFile()));
+        }
+
+        if (mOutputFile == null) {
+            ToastUtils.show(this, "Invalid output file");
             finish();
             return;
         }
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(mPortrait ? R.layout.camera_activity_port : R.layout.camera_activity_land);
         initViews();
+
+        if (mSourceMode == SourceMode.CropOnly) {
+            switchToCropMode();
+            setCropImage(mSourceFile.getAbsolutePath());
+        } else if (mSourceMode == SourceMode.Gallery) {
+            switchToCropMode();
+            openGallery();
+        } else if (mSourceMode == SourceMode.CameraGallery) {
+            switchToCameraMode();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    public boolean isPortraitMode() {
+        return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
     }
 
     private void initViews() {
         findViewById(R.id.backBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.i(TAG, "on back button clicked");
                 finish();
             }
         });
 
-        mPreviewClipLayout = findViewById(R.id.previewClipLayout);
+        mPreviewClipLayout = (FixedRatioLayout) findViewById(R.id.previewClipLayout);
         mPreviewClipLayout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
                 mCameraSurfaceView.setClipRect(new Rect(left, top, right, bottom));
+
             }
         });
 
@@ -106,22 +181,32 @@ public class CameraActivity extends Activity {
         mCameraSurfaceView.setOnRotationListener(new CameraSurfaceView.OnRotationListener() {
             @Override
             public void onRotate(int newRotation, int oldRotation) {
-                toggleHorizontalHint(newRotation != Surface.ROTATION_270);
+                toggleOrientationHint(
+                        (isPortraitMode() && newRotation != Surface.ROTATION_0)
+                                || (!isPortraitMode() && newRotation != Surface.ROTATION_270),
+                        isPortraitMode());
             }
         });
 
-        mHorizontalHintText = findViewById(R.id.horizontalHintText);
+        mHorizontalHintText = (TextView) findViewById(R.id.orientationHintText);
 
         mCropImageView = (CropImageView) findViewById(R.id.cropImageView);
         mCropImageView.setGuidelines(2);    // no guide lines
         mCropImageView.setFixedAspectRatio(true);
-        mCropImageView.setAspectRatio(4, 3);
-
+        if (mWidthRatio > 0 && mHeightRatio > 0) {
+            mPreviewClipLayout.setAspectRatio(mWidthRatio, mHeightRatio);
+        } else {
+            mWidthRatio = mPreviewClipLayout.getWidthRatio();
+            mHeightRatio = mPreviewClipLayout.getHeightRatio();
+        }
+        mCropImageView.setAspectRatio(mWidthRatio, mHeightRatio);
+        Log.i(TAG, String.format("Set aspect ratio widthRatio = %d, heightRatio = %d", mWidthRatio, mHeightRatio));
 
         cameraFlashBtn = (ImageButtonEx) findViewById(R.id.cameraFlashBtn);
         cameraFlashBtn.setOnCheckedChangeListener(new ImageButtonEx.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(ImageButtonEx button, boolean b) {
+                Log.i(TAG, "on flash button clicked");
                 if (b) {
                     mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_ON);
                 } else {
@@ -134,13 +219,14 @@ public class CameraActivity extends Activity {
         mTakePhotoBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.i(TAG, "on shutter button clicked");
                 setCameraButtonsEnabled(false); // 禁用拍照控制按钮，避免连击
                 mCameraSurfaceView.takePicture(new CameraSurfaceView.TakePictureCallback() {
                     @Override
                     public void onSuccess(Bitmap bitmap) {
                         Log.v(TAG, "take picture step 4: on onSuccess");
-                        CameraModel.Instance.setCacheBitmap(bitmap);
-                        switchToCropMode(true);
+                        switchToCropMode();
+                        setCropImage(bitmap);
                     }
 
                     @Override
@@ -157,10 +243,8 @@ public class CameraActivity extends Activity {
         mGalleryBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(
-                        Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                CameraActivity.this.startActivityForResult(intent, REQUEST_IMAGE_GALLERY);
+                Log.i(TAG, "on gallery button clicked");
+                openGallery();
             }
         });
 
@@ -168,6 +252,7 @@ public class CameraActivity extends Activity {
         mRotateBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.i(TAG, "on rotate button clicked");
                 mCropImageView.rotateImage(90);
             }
         });
@@ -176,8 +261,8 @@ public class CameraActivity extends Activity {
         mCancelCropBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                CameraModel.Instance.clearCacheBitmap();
-                switchToCameraMode();
+                Log.i(TAG, "on cancel crop button clicked");
+                cancel();
             }
         });
 
@@ -185,17 +270,8 @@ public class CameraActivity extends Activity {
         mConfirmCropBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Bitmap croppedBitmap = mCropImageView.getCroppedImage();
-
-                if (saveBitmap2File(croppedBitmap, mPictureFile)) {
-                    CameraModel.Instance.setCacheBitmap(croppedBitmap);
-                    // 照片选取完成，结束Activity，通过Intent返回数据
-                    Intent resultIntent = new Intent();
-                    resultIntent.setData(Uri.fromFile(mPictureFile));
-                    resultIntent.putExtra(PIC_SIZE, new int[]{croppedBitmap.getWidth(), croppedBitmap.getHeight()});
-                    setResult(RESULT_OK, resultIntent);
-                    CameraActivity.this.finish();
-                }
+                Log.i(TAG, "on confirm crop button clicked");
+                confirm();
             }
         });
     }
@@ -207,15 +283,19 @@ public class CameraActivity extends Activity {
         // 从相册取得照片
         if (REQUEST_IMAGE_GALLERY == requestCode) {
             if (RESULT_OK != resultCode) {
+                Log.i(TAG, "Selected nothing from gallery");
+                if (mSourceMode == SourceMode.Gallery) {
+                    cancel();
+                }
                 return;
             }
 
-            switchToCropMode(false);
-
+            switchToCropMode();
             Uri uri = data.getData();
             if (uri != null) {
                 File originalFile = getFromMediaUri(getContentResolver(), uri);
-                mCropImageView.setImageFile(originalFile.getAbsolutePath());
+                setCropImage(originalFile.getAbsolutePath());
+                Log.i(TAG, String.format("Selected picture %s from gallery", originalFile.getAbsoluteFile()));
             }
         }
     }
@@ -245,7 +325,7 @@ public class CameraActivity extends Activity {
 
         try {
             FileOutputStream fos = new FileOutputStream(file);
-            boolean saveSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
+            boolean saveSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, mQuality, fos);
             fos.flush();
             fos.close();
             return saveSuccess;
@@ -259,22 +339,24 @@ public class CameraActivity extends Activity {
      * 切换到拍照视图
      */
     private void switchToCameraMode() {
-        toggleButtons(true);
+        if (mSourceMode == SourceMode.CameraGallery) {
+            Log.i(TAG, "Switch to camera mode");
+            toggleViews(true);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); // 拍照模式时屏幕常亮
+        }
     }
 
     /**
      * 切换到裁剪视图
-     *
-     * @param confirmOnly 是否仅确认图像，而不进行裁剪
      */
-    private void switchToCropMode(boolean confirmOnly) {
-        toggleButtons(false);
-
-        mCropImageView.setImageBitmap(CameraModel.Instance.getCacheBitmap());
+    private void switchToCropMode() {
+        Log.i(TAG, "Switch to crop mode");
+        toggleViews(false);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mCropImageView.setCropEnabled(true);
     }
 
-    private void toggleButtons(boolean camera) {
+    private void toggleViews(boolean camera) {
         mCropImageView.setVisibility(camera ? View.INVISIBLE : View.VISIBLE);
         mCameraSurfaceView.setVisibility(camera ? View.VISIBLE : View.INVISIBLE);
         mTakePhotoBtn.setVisibility(camera ? View.VISIBLE : View.INVISIBLE);
@@ -286,11 +368,12 @@ public class CameraActivity extends Activity {
         setCameraButtonsEnabled(camera);
     }
 
-    private void toggleHorizontalHint(boolean visible) {
+    private void toggleOrientationHint(boolean visible, boolean portrait) {
         if (visible != mHorizontalHintText.isShown()) {
             if (visible) {
                 mHorizontalHintText.clearAnimation();
                 mHorizontalHintText.setVisibility(View.VISIBLE);
+                mHorizontalHintText.setText(portrait ? R.string.please_keep_portrait : R.string.please_keep_landscape);
             } else {
                 // 消失动画
                 AlphaAnimation hideAnimation = new AlphaAnimation(1.0f, 0.0f);
@@ -348,12 +431,67 @@ public class CameraActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (mCropImageView.isShown()) {
+        Log.i(TAG, "onBackPressed");
+        cancel();
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent(
+                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        CameraActivity.this.startActivityForResult(intent, REQUEST_IMAGE_GALLERY);
+    }
+
+    private void setCropImage(String file) {
+        onLoadImage(mCropImageView.setImageFile(file));
+    }
+
+    private void setCropImage(Bitmap bitmap) {
+        onLoadImage(mCropImageView.setImageBitmap(bitmap));
+    }
+
+    private void onLoadImage(boolean success) {
+        if (success) {
+            mConfirmCropBtn.setEnabled(true);
+            mRotateBtn.setEnabled(true);
+        } else {
+            mConfirmCropBtn.setEnabled(false);
+            mRotateBtn.setEnabled(false);
+            ToastUtils.show(this, R.string.invalid_image);
+        }
+    }
+
+    private void cancel() {
+        if (mCropImageView.isShown() && mSourceMode == SourceMode.CameraGallery) {
             // Crop mode
+            PhotoHelper.clearCacheBitmap();
             switchToCameraMode();
         } else {
-            // finish
-            super.onBackPressed();
+            Log.i(TAG, "Cancel and finish");
+            setResult(RESULT_CANCELED);
+            finish();
+        }
+    }
+
+    private void confirm() {
+        Bitmap croppedBitmap = mCropImageView.getCroppedImage();
+
+        if (saveBitmap2File(croppedBitmap, mOutputFile)) {
+            Log.i(TAG, String.format("Save picture to %s success", mOutputFile.getAbsoluteFile()));
+
+            PhotoHelper.setCacheBitmap(croppedBitmap);
+
+            // 照片选取完成，结束Activity，通过Intent返回数据
+            Intent resultIntent = new Intent();
+            resultIntent.setData(Uri.fromFile(mOutputFile));
+            resultIntent.putExtra(PhotoHelper.SIZE, new int[]{croppedBitmap.getWidth(), croppedBitmap.getHeight()});
+            setResult(RESULT_OK, resultIntent);
+
+            finish();
+
+            Log.i(TAG, String.format("Output picture size width = %d, height = %d", croppedBitmap.getWidth(), croppedBitmap.getHeight()));
+        } else {
+            Log.e(TAG, String.format("Save picture to %s failed", mOutputFile.getAbsoluteFile()));
         }
     }
 }

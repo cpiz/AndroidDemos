@@ -1,6 +1,7 @@
 package com.cpiz.android.playground.TakePicture;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -67,7 +68,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private Camera.Size mPreviewPictureSize;
     private Rect mClipRect;
 
-    private int mCurrentRotation = Surface.ROTATION_0;
+    private int mCurrentRotation = -1;
     private OnRotationListener mOnRotationListener;
 
     // 静止触发自动对焦
@@ -100,6 +101,10 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     public CameraSurfaceView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init();
+    }
+
+    public boolean isPortraitMode() {
+        return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
     }
 
     public Rect getClipRect() {
@@ -243,40 +248,35 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         // 获得图片原始尺寸，降低采样，提升性能，防止OOM
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;  // 照片数据，使用RGB_565足够，节约内存
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;  // 照片数据，使用RGB_565足够，节约内存
         BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
         Log.d(TAG, String.format("take picture step 1: picture original width = %d, height = %d", options.outWidth, options.outHeight));
         options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, MAX_PICTURE_SHORT_SIDE, MAX_PICTURE_SHORT_SIDE);
 
         // 解码图片
         options.inJustDecodeBounds = false;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         Bitmap source = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
         Log.d(TAG, String.format("take picture step 2: picture output width = %d, height = %d", options.outWidth, options.outHeight));
 
         // 根据 ClipRect 裁剪输出
         double outAspectRadio = (double) (mClipRect.width()) / mClipRect.height();
-        int shortSideLen = Math.min(options.outWidth, options.outHeight);
+        Matrix outputMatrix = new Matrix();
+        int outX, outY, outWidth, outHeight;
+        if (isPortraitMode()) {
+            outputMatrix.postRotate(90);
+            outX = mClipRect.top * source.getWidth() / getHeight();
+            outY = mClipRect.left * source.getWidth() / getWidth();
+            outWidth = (int) (source.getHeight() / outAspectRadio);
+            outHeight = source.getHeight();
+        } else {
+            outX = mClipRect.left * source.getWidth() / getWidth();
+            outY = mClipRect.top * source.getHeight() / getHeight();
+            outWidth = (int) (source.getHeight() * outAspectRadio);
+            outHeight = source.getHeight();
+        }
 
-        int outX = mClipRect.left * (source.getWidth() / options.inSampleSize) / getWidth();
-        int outY = mClipRect.top * (source.getHeight() / options.inSampleSize) / getHeight();
-        int outWidth = shortSideLen == source.getWidth() ? shortSideLen : (int) (shortSideLen * outAspectRadio);
-        int outHeight = shortSideLen == source.getHeight() ? shortSideLen : (int) (shortSideLen * outAspectRadio);
-
-        // 输出的时候不旋转
-//        Matrix matrix = new Matrix();
-//        matrix.postRotate(90 + mCurrentRotation * 90);
-//        Bitmap output = Bitmap.createBitmap(
-//                source,
-//                0,
-//                0,
-//                outWidth,
-//                outHeight,
-//                new Matrix(),
-//                true);
-
-        // 输出的时候不旋转，交给外面的客户保存时再选择
-        Bitmap output = Bitmap.createBitmap(source, outX, outY, outWidth, outHeight);
+        Bitmap output = Bitmap.createBitmap(source, outX, outY, outWidth, outHeight, outputMatrix, false);
         source.recycle();
 
         Log.d(TAG, "take picture step 3: on bitmap cropped");
@@ -460,11 +460,11 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private void setCameraDisplayOrientation() {
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(mCameraId, info);
-        mCamera.setDisplayOrientation(90); // for portrait
+        mCamera.setDisplayOrientation(isPortraitMode() ? 90 : 0);
     }
 
     /**
-     * 设置拍照尺寸，尽可能取画面比例符合BEST_PICTURE_RATIO的硬件最大值
+     * 设置拍照尺寸
      */
     private void setBestPictureSize() {
         Camera.Parameters params = mCamera.getParameters();
@@ -534,7 +534,6 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         Log.i(TAG, "set best preview size> width = " + mPreviewPictureSize.width + ", " +
                 "height = " + mPreviewPictureSize.height + ", ratio = " + previewRatio);
         params.setPreviewSize(mPreviewPictureSize.width, mPreviewPictureSize.height);
-        mCamera.setDisplayOrientation(0);
         mCamera.setParameters(params);
 
         adjustViewSize(mPreviewPictureSize);

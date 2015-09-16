@@ -49,7 +49,6 @@ public class FixedRatioLayout extends RelativeLayout {
         }
     }
 
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final boolean portrait = (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
@@ -63,5 +62,19 @@ public class FixedRatioLayout extends RelativeLayout {
             int newWidthSpec = MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY);
             super.onMeasure(newWidthSpec, heightMeasureSpec);
         }
+    }
+
+    public void setAspectRatio(int widthRatio, int heightRatio) {
+        this.widthRatio = widthRatio;
+        this.heightRatio = heightRatio;
+        requestLayout();
+    }
+
+    public int getWidthRatio() {
+        return widthRatio;
+    }
+
+    public int getHeightRatio() {
+        return heightRatio;
     }
 }

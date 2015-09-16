@@ -253,7 +253,7 @@ public class CropImageView extends FrameLayout {
      *
      * @param bitmap the Bitmap to set
      */
-    public void setImageBitmap(Bitmap bitmap) {
+    public boolean setImageBitmap(Bitmap bitmap) {
 
         mBitmap = bitmap;
         mImageView.setImageBitmap(mBitmap);
@@ -261,6 +261,8 @@ public class CropImageView extends FrameLayout {
         if (mCropOverlayView != null) {
             mCropOverlayView.resetCropOverlayView();
         }
+
+        return true;
     }
 
     /**
@@ -272,15 +274,14 @@ public class CropImageView extends FrameLayout {
      * @param bitmap the original bitmap to set; if null, this
      * @param exif   the EXIF information about this bitmap; may be null
      */
-    public void setImageBitmap(Bitmap bitmap, ExifInterface exif) {
+    public boolean setImageBitmap(Bitmap bitmap, ExifInterface exif) {
 
         if (bitmap == null) {
-            return;
+            return false;
         }
 
         if (exif == null) {
-            setImageBitmap(bitmap);
-            return;
+            return setImageBitmap(bitmap);
         }
 
         final Matrix matrix = new Matrix();
@@ -300,7 +301,7 @@ public class CropImageView extends FrameLayout {
         }
 
         if (rotate == -1) {
-            setImageBitmap(bitmap);
+            return setImageBitmap(bitmap);
         } else {
             matrix.postRotate(rotate);
             final Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap,
@@ -310,8 +311,9 @@ public class CropImageView extends FrameLayout {
                     bitmap.getHeight(),
                     matrix,
                     true);
-            setImageBitmap(rotatedBitmap);
+            boolean ret = setImageBitmap(rotatedBitmap);
             bitmap.recycle();
+            return ret;
         }
     }
 
@@ -320,16 +322,16 @@ public class CropImageView extends FrameLayout {
      *
      * @param path
      */
-    public void setImageFile(final String path) {
+    public boolean setImageFile(final String path) {
         if (path == null) {
-            return;
+            return false;
         }
 
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
         Bitmap bitmap = BitmapFactory.decodeFile(path, bmOptions);
         if (bitmap == null) {
-            return;
+            return false;
         }
 
         ExifInterface exif = null;
@@ -340,7 +342,7 @@ public class CropImageView extends FrameLayout {
             e.printStackTrace();
         }
 
-        setImageBitmap(bitmap, exif);
+        return setImageBitmap(bitmap, exif);
     }
 
     /**

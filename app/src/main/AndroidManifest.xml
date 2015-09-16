@@ -30,24 +30,21 @@
 
         <activity
             android:name=".MainActivity">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.MAIN"/>-->
-            <!--<category android:name="android.intent.category.LAUNCHER"/>-->
-            <!--</intent-filter>-->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </activity>
 
         <activity android:name=".RxBusTest.RxBusTestActivity"/>
         <activity android:name=".JsonMessageTest.JsonMessageTestActivity"/>
         <activity android:name=".RetrofitTest.RetrofitTestActivity"/>
         <activity android:name=".OkHttpSpeedLimit.OkHttpTestActivity"/>
+        <activity android:name=".TakePicture.CameraTestActivity"/>
         <activity
             android:name=".TakePicture.CameraActivity"
-            android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="nosensor">
         </activity>
     </application>
 

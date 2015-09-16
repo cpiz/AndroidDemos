@@ -8,12 +8,14 @@
     <com.cpiz.android.playground.TakePicture.CameraSurfaceView
         android:id="@+id/cameraSurfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:visibility="invisible"/>
 
     <RelativeLayout
         android:id="@+id/titleBar"
-        android:layout_width="48dp"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
         android:background="#252525"
         android:clickable="true">
 
@@ -21,7 +23,7 @@
             android:id="@+id/backBtn"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
             android:background="@null"
             android:scaleType="center"
             android:src="@drawable/icon_back_arrow"
@@ -31,7 +33,7 @@
             android:id="@+id/rotateBtn"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
             android:background="@null"
             android:scaleType="center"
             android:src="@drawable/icon_rotate"
@@ -41,23 +43,23 @@
 
     <com.cpiz.android.controls.FixedRatioLayout
         android:id="@+id/previewClipLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_toRightOf="@id/titleBar"
-        app:heightRatio="3"
-        app:widthRatio="4">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/titleBar"
+        app:heightRatio="1"
+        app:widthRatio="1">
 
         <TextView
-            android:id="@+id/horizontalHintText"
+            android:id="@+id/orientationHintText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:background="@drawable/keep_horizontal_edit_text_bg"
+            android:background="@drawable/keep_orientation_edit_text_bg"
             android:paddingBottom="6dp"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
             android:paddingTop="6dp"
-            android:text="@string/please_keep_horizontal"
+            android:text="@string/please_keep_portrait"
             android:textColor="@android:color/white"
             android:textSize="14sp"
             android:visibility="invisible"/>
@@ -73,11 +75,12 @@
     <LinearLayout
         android:id="@+id/cameraControlLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_toRightOf="@id/previewClipLayout"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@id/previewClipLayout"
         android:background="#252525"
         android:clickable="true"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <View
             android:layout_width="0dp"
@@ -88,7 +91,7 @@
             android:id="@+id/galleryBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center_vertical"
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_gallery"
@@ -98,7 +101,7 @@
             android:id="@+id/cancelPictureBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center_vertical"
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_cancel_picture"
@@ -114,7 +117,7 @@
             android:id="@+id/shutterBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center_vertical"
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_shutter"
@@ -129,7 +132,7 @@
             android:id="@+id/cameraFlashBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center_vertical"
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/flash_toggle_btn_bg"
@@ -140,7 +143,7 @@
             android:id="@+id/confirmPictureBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center_vertical"
             android:background="@null"
             android:padding="20dp"
             android:src="@drawable/icon_confirm_picture"
