@@ -65,7 +65,7 @@ public class FixedRatioLayout extends RelativeLayout {
         }
     }
 
-    public void setAspectRatio(int widthRatio, int heightRatio) {
+    public void setRatio(int widthRatio, int heightRatio) {
         this.widthRatio = widthRatio;
         this.heightRatio = heightRatio;
         requestLayout();

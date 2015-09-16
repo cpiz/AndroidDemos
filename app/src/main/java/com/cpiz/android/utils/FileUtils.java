@@ -577,44 +577,4 @@ public class FileUtils {
         File file = new File(path);
         return (file.exists() && file.isFile() ? file.length() : -1);
     }
-
-    public static File createTempImageFile(String postfix) {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_" + timeStamp;
-        if (postfix != null) {
-            imageFileName += "_" + postfix;
-        }
-
-        File storageDirFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        storageDirFile = new File(storageDirFile.getAbsolutePath());
-        try {
-            if (!storageDirFile.exists()) {
-                if (storageDirFile.mkdirs()) {
-                    Log.d(TAG, "Create dir success: " + storageDirFile.getAbsolutePath());
-                } else {
-                    Log.w(TAG, "Create dir failed: " + storageDirFile.getAbsolutePath());
-                    return null;
-                }
-            }
-
-            Log.d(TAG, String.format("File name: %s, directory: %s", imageFileName, storageDirFile.getAbsolutePath()));
-
-            File image = File.createTempFile(
-                    imageFileName,  /* prefix */
-                    ".jpg",         /* suffix */
-                    storageDirFile      /* directory */
-            );
-
-            // Save a file: path for use with ACTION_VIEW intents
-            String path = image.getAbsolutePath();
-
-            Log.d(TAG, "Picture path: " + path);
-
-            return image;
-        } catch (IOException ioe) {
-            Log.w(TAG, "create image file failed.", ioe);
-            return null;
-        }
-    }
 }

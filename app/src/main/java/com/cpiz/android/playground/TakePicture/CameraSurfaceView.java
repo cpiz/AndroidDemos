@@ -58,6 +58,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private Point mFocusPoint = new Point();
     private Point mPreviewPictureSize = new Point();
     private Point mFullPictureSize = new Point();
+    private boolean mFrontCamera = false;
     private Rect mClipRect;
     private int mPreferredWidth = 9999;
     private int mPreferredHeight = 9999;
@@ -95,6 +96,19 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     public CameraSurfaceView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init();
+    }
+
+    public boolean isFrontCamera() {
+        return mFrontCamera;
+    }
+
+    /**
+     * 设置是否使用前置摄像头
+     *
+     * @param frontCamera 是否使用前置摄像头
+     */
+    public void setFrontCamera(boolean frontCamera) {
+        mFrontCamera = frontCamera;
     }
 
     public boolean isPortraitMode() {
@@ -146,17 +160,6 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         // 选取加速度感应器，用于自动对焦
         if (!isInEditMode()) {
             mSensorManager = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
-        }
-
-        // 获得后置摄像头ID
-        mCameraId = -1;
-        int numberOfCameras = Camera.getNumberOfCameras();
-        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-        for (int i = 0; i < numberOfCameras; i++) {
-            Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                mCameraId = i;
-            }
         }
     }
 
@@ -268,22 +271,44 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         Log.d(TAG, String.format("take picture step 2: picture output width = %d, height = %d", options.outWidth, options.outHeight));
 
         // 根据 ClipRect 裁剪输出
-        float outAspectRadio = (float) (mClipRect.width()) / mClipRect.height();
         Matrix outputMatrix = new Matrix();
         int outX, outY, outWidth, outHeight;
-        if (isPortraitMode()) {
-            outputMatrix.postRotate(90);
-            outX = mClipRect.top * source.getWidth() / getHeight();
-            outY = mClipRect.left * source.getWidth() / getWidth();
-            outWidth = (int) (source.getHeight() / outAspectRadio);
-            outHeight = source.getHeight();
+        if (!isFrontCamera()) {
+            if (!isPortraitMode()) {
+                // 后置横屏
+                outputMatrix.postRotate(0);
+                outX = mClipRect.left * source.getWidth() / getWidth();
+                outY = mClipRect.top * source.getHeight() / getHeight();
+                outWidth = mClipRect.width() * source.getWidth() / getWidth();
+                outHeight = mClipRect.height() * source.getHeight() / getHeight();
+            } else {
+                // 后置竖屏
+                outputMatrix.postRotate(90);
+                outX = mClipRect.top * source.getWidth() / getHeight();
+                outY = (getWidth() - mClipRect.left - mClipRect.width()) * source.getHeight() / getWidth();
+                outWidth = mClipRect.height() * source.getWidth() / getHeight();
+                outHeight = mClipRect.width() * source.getHeight() / getWidth();
+            }
         } else {
-            outX = mClipRect.left * source.getWidth() / getWidth();
-            outY = mClipRect.top * source.getHeight() / getHeight();
-            outWidth = (int) (source.getHeight() * outAspectRadio);
-            outHeight = source.getHeight();
+            if (!isPortraitMode()) {
+                // 前置横屏
+                outputMatrix.postRotate(0);
+                outX = (getWidth() - mClipRect.left - mClipRect.width()) * source.getWidth() / getWidth();
+                outY = mClipRect.top * source.getHeight() / getHeight();
+                outWidth = mClipRect.width() * source.getWidth() / getWidth();
+                outHeight = mClipRect.height() * source.getHeight() / getHeight();
+            } else {
+                // 前置竖屏
+                outputMatrix.postRotate(270);
+                outX = (getHeight() - mClipRect.top - mClipRect.height()) * source.getWidth() / getHeight();
+                outY = (getWidth() - mClipRect.left - mClipRect.width()) * source.getHeight() / getWidth();
+                outWidth = mClipRect.height() * source.getWidth() / getHeight();
+                outHeight = mClipRect.width() * source.getHeight() / getWidth();
+            }
         }
 
+        Log.v(TAG, String.format("createBitmap x=%d, y=%d, width=%d, height=%d, matrix=%s",
+                outX, outY, outWidth, outHeight, outputMatrix.toString()));
         Bitmap output = Bitmap.createBitmap(source, outX, outY, outWidth, outHeight, outputMatrix, false);
         source.recycle();
 
@@ -306,27 +331,6 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v(TAG, "surfaceCreated");
-
-        if (mCameraId >= 0) {
-            try {
-                mCamera = Camera.open(mCameraId);
-                mCamera.setPreviewDisplay(mCameraSurfaceHolder);
-            } catch (IOException e) {
-                Log.e(TAG, "IOException on setPreviewDisplay", e);
-                mCamera = null;
-            } catch (Exception e) {
-                Log.e(TAG, "Exception on open camera", e);
-                ToastUtils.show(getContext(), "Open camera failed");
-                mCamera = null;
-            }
-        } else {
-            ToastUtils.show(getContext(), "Back camera not found");
-            mCamera = null;
-        }
-
-        if (mCamera != null) {
-            setWillNotDraw(false); // 调用onDraw
-        }
     }
 
     @Override
@@ -335,7 +339,9 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         if (mClipRect == null) {
             mClipRect = new Rect(0, 0, width, height);
         }
-        startCameraPreview();
+        if (initCamera()) {
+            startCameraPreview();
+        }
     }
 
     @Override
@@ -417,6 +423,60 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
+    /**
+     * 初始化摄像头
+     *
+     * @return
+     */
+    private boolean initCamera() {
+        if (mCamera != null) {
+            return true;
+        }
+
+        // 获得后置摄像头ID
+        mCameraId = -1;
+        int numberOfCameras = Camera.getNumberOfCameras();
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.getCameraInfo(i, cameraInfo);
+            if (isFrontCamera() && cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                mCameraId = i;
+                Log.d(TAG, String.format("Use front camera id = %d", i));
+            } else if (!isFrontCamera() && cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                mCameraId = i;
+                Log.d(TAG, String.format("Use back camera id = %d", i));
+            }
+        }
+
+        if (mCameraId == -1 && numberOfCameras > 0) {
+            mCameraId = 0;
+            Log.w(TAG, String.format("Use default camera id = %d", 0));
+        }
+
+        if (mCameraId >= 0) {
+            try {
+                mCamera = Camera.open(mCameraId);
+                mCamera.setPreviewDisplay(mCameraSurfaceHolder);
+            } catch (IOException e) {
+                Log.e(TAG, "IOException on setPreviewDisplay", e);
+                mCamera = null;
+            } catch (Exception e) {
+                Log.e(TAG, "Exception on open camera", e);
+                ToastUtils.show(getContext(), "Open camera failed");
+                mCamera = null;
+            }
+        } else {
+            ToastUtils.show(getContext(), "Camera not found");
+            mCamera = null;
+        }
+
+        if (mCamera != null) {
+            setWillNotDraw(false); // 调用onDraw
+        }
+
+        return mCamera != null;
+    }
+
     private void startCameraPreview() {
         if (mCamera != null) {
             // 注册重力感应，静止时自动对焦
@@ -462,16 +522,18 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         }
 
         // 对焦框
-        if (mCamera != null && mFocusState != FocusState.FOCUS_READY) {
-            int size = (int) (scale * 40f);
-            if (mFocusState == FocusState.FOCUSING) {
-                mFocusPaint.setColor(Color.WHITE);
-            } else if (mFocusState == FocusState.FOCUS_COMPLETE) {
-                mFocusPaint.setColor(Color.GREEN);
-            } else if (mFocusState == FocusState.FOCUS_FAILED) {
-                mFocusPaint.setColor(Color.RED);
+        if (!isFrontCamera()) { // 前置摄像头不显示对焦框，因为一般不支持自动对焦
+            if (mCamera != null && mFocusState != FocusState.FOCUS_READY) {
+                int size = (int) (scale * 40f);
+                if (mFocusState == FocusState.FOCUSING) {
+                    mFocusPaint.setColor(Color.WHITE);
+                } else if (mFocusState == FocusState.FOCUS_COMPLETE) {
+                    mFocusPaint.setColor(Color.GREEN);
+                } else if (mFocusState == FocusState.FOCUS_FAILED) {
+                    mFocusPaint.setColor(Color.RED);
+                }
+                canvas.drawRect(mFocusPoint.x - size, mFocusPoint.y - size, mFocusPoint.x + size, mFocusPoint.y + size, mFocusPaint);
             }
-            canvas.drawRect(mFocusPoint.x - size, mFocusPoint.y - size, mFocusPoint.x + size, mFocusPoint.y + size, mFocusPaint);
         }
 
         super.onDraw(canvas);
@@ -497,9 +559,10 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         float previewRatio = 0;
         Point previewSize = new Point();
         for (Camera.Size size : previewSizes) {
-            float sizeRatio = getRatio(size.height, size.width);
-            boolean accept = false;
+            float sizeRatio = getRatio(size.width, size.height);
+            Log.v(TAG, String.format("Supported preview size > width = %d, height = %d, ratio = %f", size.width, size.height, sizeRatio));
 
+            boolean accept = false;
             if (previewRatio != screenRatio && sizeRatio == screenRatio) {
                 // 若找到与屏幕比例一致的配置，指定它
                 accept = true;
@@ -519,7 +582,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
         Log.println(previewRatio == screenRatio ? Log.INFO : Log.WARN,
                 TAG,
-                String.format("set best preview size> width = %d, height = %d, ratio = %f",
+                String.format("Set best preview size> width = %d, height = %d, ratio = %f",
                         previewSize.x, previewSize.y, previewRatio));
 
         mPreviewPictureSize.set(previewSize.x, previewSize.y);
@@ -536,13 +599,13 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         Camera.Parameters params = mCamera.getParameters();
         List<Camera.Size> supportedSizes = params.getSupportedPictureSizes();
         float previewRatio = getRatio(mPreviewPictureSize.x, mPreviewPictureSize.y);
-        Log.i(TAG, String.format("Preview widget ratio=%f", previewRatio));
 
         // 根据相机配置，尽可能设置与预览尺寸一致的更高分辨率的配置
         float pictureRatio = 0;
         Point pictureSize = new Point(0, 0);
         for (Camera.Size size : supportedSizes) {
             float sizeRatio = getRatio(size.width, size.height);
+            Log.v(TAG, String.format("Supported picture size > width = %d, height = %d, ratio = %f", size.width, size.height, sizeRatio));
 
             boolean accept = false;
             if (pictureRatio != previewRatio && sizeRatio == previewRatio) {
@@ -566,7 +629,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
         Log.println(pictureRatio == previewRatio ? Log.INFO : Log.WARN,
                 TAG,
-                String.format("set best picture size> width = %d, height = %d, ratio = %f",
+                String.format("Set best picture size> width = %d, height = %d, ratio = %f",
                         pictureSize.x, pictureSize.y, pictureRatio));
 
         mFullPictureSize = pictureSize;
@@ -617,6 +680,14 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         return areas;
     }
 
+    /**
+     * 尝试对指定位置进行自动对焦
+     * 前置摄像头一般不支持自动对焦，但可能会触发自动对光
+     *
+     * @param x
+     * @param y
+     * @param byTouch 是否由用户主动点击触发，是的话将播放对焦音
+     */
     private void try2Focus(int x, int y, final boolean byTouch) {
         mIsFocused = true;
         if (mCamera != null) {
@@ -640,7 +711,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                 mCamera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
-                        Log.d(TAG, "auto focus complete: success -> " + success);
+                        Log.println(success ? Log.INFO : Log.WARN, TAG, "auto focus complete: success -> " + success);
                         changeFocusState(success ? FocusState.FOCUS_COMPLETE : FocusState.FOCUS_FAILED);
                         if (success && byTouch) {
                             RingtonePlayer.Instance.playRingTone(R.raw.camera_focus, false);

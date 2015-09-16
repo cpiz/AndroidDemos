@@ -25,7 +25,6 @@ import com.cpiz.android.controls.FixedRatioLayout;
 import com.cpiz.android.controls.ImageButtonEx;
 import com.cpiz.android.playground.R;
 import com.cpiz.android.playground.TakePicture.cropper.CropImageView;
-import com.cpiz.android.utils.FileUtils;
 import com.cpiz.android.utils.ToastUtils;
 
 import java.io.File;
@@ -35,7 +34,7 @@ import java.io.IOException;
 /**
  * 提供拍照、闪关灯、相册选择、二次确认、旋转、裁剪功能
  * 支持启动时通过Intent指定横竖屏模式、输入路径、输出路径、照片比例、导出质量
- * 通过 onActivityResult 的 Intent.getData 获得输出图片路径，getIntArrayExtra(SIZE) 可获得图片尺寸
+ * 通过 onActivityResult 的 Intent.getData 获得输出图片路径，getIntArrayExtra(OUTPUT_SIZE) 可获得图片尺寸
  * <p>
  * 请使用 PhotoHelper 调用此 Activity
  * <p>
@@ -68,6 +67,7 @@ public class CameraActivity extends Activity {
     private SourceMode mSourceMode = SourceMode.CameraGallery;
     private int mQuality = 70;
     private boolean mPortrait = true;
+    private boolean mFrontCamera = false;
     private int mWidthRatio = 0;
     private int mHeightRatio = 0;
     private int mPreferableWidth = 9999;
@@ -89,6 +89,9 @@ public class CameraActivity extends Activity {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             Log.i(TAG, "Set screen orientation to landscape");
         }
+
+        mFrontCamera = getIntent().getBooleanExtra(PhotoHelper.FRONT_CAMERA, false);
+        Log.i(TAG, String.format("Set use front camera: %b", mFrontCamera));
 
         // 获得图片采集比例
         int[] ratio = getIntent().getIntArrayExtra(PhotoHelper.OUTPUT_RATIO);
@@ -133,21 +136,12 @@ public class CameraActivity extends Activity {
         if (!TextUtils.isEmpty(outputPath)) {
             mOutputFile = new File(outputPath);
             Log.i(TAG, String.format("Set output file=%s", outputPath));
-        } else {
-            // 若无外部传入，则创建临时图片
-            mOutputFile = FileUtils.createTempImageFile(null);
-            Log.i(TAG, String.format("Create output file=%s", mOutputFile.getAbsoluteFile()));
         }
 
-        if (mOutputFile == null) {
-            ToastUtils.show(this, "Invalid output file");
-            finish();
-            return;
-        }
-
+        // 初始化界面
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(mPortrait ? R.layout.camera_activity_port : R.layout.camera_activity_land);
+        setContentView(mPortrait ? R.layout.camera_activity_portrait : R.layout.camera_activity_landscape);
         initViews();
 
         if (mSourceMode == SourceMode.CropOnly) {
@@ -189,6 +183,7 @@ public class CameraActivity extends Activity {
         });
 
         mCameraSurfaceView = (CameraSurfaceView) findViewById(R.id.cameraSurfaceView);
+        mCameraSurfaceView.setFrontCamera(mFrontCamera);
         mCameraSurfaceView.setOnRotationListener(new CameraSurfaceView.OnRotationListener() {
             @Override
             public void onRotate(int newRotation, int oldRotation) {
@@ -205,7 +200,7 @@ public class CameraActivity extends Activity {
         mCropImageView.setGuidelines(2);    // no guide lines
         mCropImageView.setFixedAspectRatio(true);
         if (mWidthRatio > 0 && mHeightRatio > 0) {
-            mPreviewClipLayout.setAspectRatio(mWidthRatio, mHeightRatio);
+            mPreviewClipLayout.setRatio(mWidthRatio, mHeightRatio);
         } else {
             mWidthRatio = mPreviewClipLayout.getWidthRatio();
             mHeightRatio = mPreviewClipLayout.getHeightRatio();
@@ -487,21 +482,45 @@ public class CameraActivity extends Activity {
 
     private void confirm() {
         Bitmap croppedBitmap = mCropImageView.getCroppedImage();
+        if (croppedBitmap == null) {
+            ToastUtils.show(this, "Crop image failed");
+            Log.e(TAG, "Crop image failed");
+            return;
+        }
+
+        boolean autoCreateOutput = false; // 标记图片文件是否自动创建的，可能需要删除
+        if (mOutputFile == null) {
+            // 若无外部传入，则自动创建图片
+            mOutputFile = PhotoHelper.newPictureFile(null);
+            if (mOutputFile != null) {
+                autoCreateOutput = true;
+                Log.i(TAG, String.format("Create output file=%s", mOutputFile.getAbsoluteFile()));
+            } else {
+                ToastUtils.show(this, "Crop image failed");
+                Log.e(TAG, "Create output file failed");
+                return;
+            }
+        }
+
         if (saveBitmap2File(croppedBitmap, mOutputFile)) {
             Log.i(TAG, String.format("Save picture to [%s] success, size width = %d, height = %d",
                     mOutputFile.getAbsoluteFile(), croppedBitmap.getWidth(), croppedBitmap.getHeight()));
 
             PhotoHelper.setCacheBitmap(croppedBitmap);
 
-            // 照片选取完成，结束Activity，通过Intent返回数据
+            // 通过Intent返回数据
             Intent resultIntent = new Intent();
             resultIntent.setData(Uri.fromFile(mOutputFile));
-            resultIntent.putExtra(PhotoHelper.SIZE, new int[]{croppedBitmap.getWidth(), croppedBitmap.getHeight()});
+            resultIntent.putExtra(PhotoHelper.OUTPUT_PATH, mOutputFile.getAbsolutePath());
+            resultIntent.putExtra(PhotoHelper.OUTPUT_SIZE, new int[]{croppedBitmap.getWidth(), croppedBitmap.getHeight()});
             setResult(RESULT_OK, resultIntent);
 
             finish();
         } else {
             Log.e(TAG, String.format("Save picture to %s failed", mOutputFile.getAbsoluteFile()));
+            if (autoCreateOutput) {
+                mOutputFile.delete();
+            }
         }
     }
 }

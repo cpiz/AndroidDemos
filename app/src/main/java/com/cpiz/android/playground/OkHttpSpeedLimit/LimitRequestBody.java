@@ -17,7 +17,7 @@ import okio.Source;
 public class LimitRequestBody {
     private static final String TAG = "LimitRequestBody";
 
-    private static final int SEGMENT_SIZE = 2048; // okio.Segment.SIZE
+    private static final int SEGMENT_SIZE = 2048; // okio.Segment.OUTPUT_SIZE
     private static final int MAX_BYTES_PER_SECOND = 20 * 1024;
 
     /**
