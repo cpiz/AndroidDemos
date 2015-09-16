@@ -25,7 +25,7 @@ import android.view.SurfaceView;
 
 import com.cpiz.android.common.RingtonePlayer;
 import com.cpiz.android.playground.R;
-import com.cpiz.android.utils.MathUtils;
+import com.cpiz.android.utils.DimensionUtil;
 import com.cpiz.android.utils.ToastUtils;
 
 import java.io.IOException;
@@ -39,14 +39,6 @@ import java.util.TimerTask;
  */
 public class CameraSurfaceView extends SurfaceView implements SensorEventListener, SurfaceHolder.Callback {
     private static final String TAG = "CameraSurfaceView";
-
-    public static final int BEST_PICTURE_WIDTH = 1920;
-    public static final int BEST_PICTURE_HEIGHT = 1080;
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private static float BEST_PICTURE_RATIO = 0.75f;
-
-    public static final int MAX_PICTURE_SHORT_SIDE = 1440;
 
     @SuppressWarnings("FieldCanBeLocal")
     private static float MOTIONLESS_ACC_IN_THRESHOLD = 0.35f;
@@ -64,9 +56,11 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private int mCameraId;
     private boolean mIsTakingPicture;
     private Point mFocusPoint = new Point();
-    private Camera.Size mFullPictureSize;
-    private Camera.Size mPreviewPictureSize;
+    private Point mPreviewPictureSize = new Point();
+    private Point mFullPictureSize = new Point();
     private Rect mClipRect;
+    private int mPreferredWidth = 9999;
+    private int mPreferredHeight = 9999;
 
     private int mCurrentRotation = -1;
     private OnRotationListener mOnRotationListener;
@@ -118,6 +112,18 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
      */
     public void setClipRect(Rect clipRect) {
         mClipRect = clipRect;
+    }
+
+    /**
+     * 设置最佳输出拍照尺寸
+     * 须在开启相机之前调用
+     *
+     * @param preferredWidth
+     * @param preferredHeight
+     */
+    public void setPreferredSize(int preferredWidth, int preferredHeight) {
+        mPreferredWidth = preferredWidth;
+        mPreferredHeight = preferredHeight;
     }
 
     @SuppressWarnings("deprecation")
@@ -248,19 +254,21 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         // 获得图片原始尺寸，降低采样，提升性能，防止OOM
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;  // 照片数据，使用RGB_565足够，节约内存
+        options.inPreferredConfig = Bitmap.Config.RGB_565;  // 照片数据，使用RGB_565足够，节约内存
         BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
         Log.d(TAG, String.format("take picture step 1: picture original width = %d, height = %d", options.outWidth, options.outHeight));
-        options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, MAX_PICTURE_SHORT_SIDE, MAX_PICTURE_SHORT_SIDE);
+        Point sampleSize = getPreferredSampleSize();
+        options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, sampleSize.x, sampleSize.y);
+        Log.d(TAG, String.format("sampleWidth = %d, sampleHeight = %d, inSampleSize = %d", sampleSize.x, sampleSize.y, options.inSampleSize));
 
         // 解码图片
         options.inJustDecodeBounds = false;
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
         Bitmap source = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
         Log.d(TAG, String.format("take picture step 2: picture output width = %d, height = %d", options.outWidth, options.outHeight));
 
         // 根据 ClipRect 裁剪输出
-        double outAspectRadio = (double) (mClipRect.width()) / mClipRect.height();
+        float outAspectRadio = (float) (mClipRect.width()) / mClipRect.height();
         Matrix outputMatrix = new Matrix();
         int outX, outY, outWidth, outHeight;
         if (isPortraitMode()) {
@@ -281,6 +289,18 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
         Log.d(TAG, "take picture step 3: on bitmap cropped");
         return output;
+    }
+
+    private Point getPreferredSampleSize() {
+        long sampleWidth, sampleHeight;
+        if (isPortraitMode()) {
+            sampleWidth = mPreferredHeight * getHeight() / mClipRect.height();
+            sampleHeight = mPreferredWidth * getWidth() / mClipRect.width();
+        } else {
+            sampleHeight = mPreferredHeight * getHeight() / mClipRect.height();
+            sampleWidth = mPreferredWidth * getWidth() / mClipRect.width();
+        }
+        return new Point((int) sampleWidth, (int) sampleHeight);
     }
 
     @Override
@@ -408,8 +428,8 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             mIsFocused = false;
 
             setCameraDisplayOrientation();
-            setBestPictureSize();
             setBestPreviewSize();
+            setBestPictureSize();
             setFlashMode(mFlashMode);   // 回到相机界面时恢复之前闪关灯状态
 
             mCamera.startPreview();
@@ -464,83 +484,98 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     }
 
     /**
-     * 设置拍照尺寸
-     */
-    private void setBestPictureSize() {
-        Camera.Parameters params = mCamera.getParameters();
-
-        List<Camera.Size> sizes = params.getSupportedPictureSizes();
-        Camera.Size pictureSize = null;
-        float pictureRatio = 0f;
-
-        // 查找设定分辨率
-        for (Camera.Size size : sizes) {
-            Log.d(TAG, "picture sizes> w = " + size.width + ", h = " + size.height + ", ratio = " + (float) size.height / size.width);
-            if (size.width == BEST_PICTURE_WIDTH && size.height == BEST_PICTURE_HEIGHT) {
-                pictureSize = size;
-                pictureRatio = (float) size.height / size.width;
-            }
-        }
-
-        // 最佳分辨率
-        if (pictureSize == null) {
-            for (Camera.Size size : sizes) {
-                float sizeRatio = (float) size.height / size.width;
-                if (pictureSize == null
-                        || (MathUtils.isApproximatelyEqual(sizeRatio, BEST_PICTURE_RATIO)
-                        && (!MathUtils.isApproximatelyEqual(pictureRatio, BEST_PICTURE_RATIO) || size.width * size.height > pictureSize.width * pictureSize.height))) {
-                    pictureSize = size;
-                    pictureRatio = sizeRatio;
-                }
-            }
-        }
-
-        mFullPictureSize = pictureSize;
-        if (mFullPictureSize != null) {
-            Log.i(TAG, "set best picture size> width = " + pictureSize.width + ", " +
-                    "height = " + pictureSize.height + ", ratio = " + pictureRatio);
-            params.setPictureSize(pictureSize.width, pictureSize.height);
-            mCamera.setParameters(params);
-        }
-    }
-
-    /**
-     * 设置预览尺寸，在保证与照片比例一致(约等于，误差0.01)的前提下，尽可能取最大
+     * 设置预览尺寸
      */
     private void setBestPreviewSize() {
         Camera.Parameters params = mCamera.getParameters();
-
         List<Camera.Size> previewSizes = params.getSupportedPreviewSizes();
-        if (previewSizes.isEmpty()) {
-            Log.d(TAG, "empty preview sizes");
-            return;
-        }
 
-        float pictureRatio = (float) mFullPictureSize.height / mFullPictureSize.width;
-        float previewRatio = 0f;
-        float sizeRatio;
+        Point screenSize = new Point();
+        DimensionUtil.getScreenSize(getContext(), screenSize);
+        float screenRatio = getRatio(screenSize.x, screenSize.y);
+
+        float previewRatio = 0;
+        Point previewSize = new Point();
         for (Camera.Size size : previewSizes) {
-            sizeRatio = (float) size.height / size.width;
-            Log.d(TAG, "preview sizes> w = " + size.width + ", h = " + size.height + ", ratio = " + sizeRatio);
+            float sizeRatio = getRatio(size.height, size.width);
+            boolean accept = false;
 
-            if (mPreviewPictureSize == null
-                    || (MathUtils.isApproximatelyEqual(sizeRatio, pictureRatio)
-                    && (!MathUtils.isApproximatelyEqual(previewRatio, pictureRatio) || size.width * size.height > mPreviewPictureSize.width * mPreviewPictureSize.height))) {
-                mPreviewPictureSize = size;
+            if (previewRatio != screenRatio && sizeRatio == screenRatio) {
+                // 若找到与屏幕比例一致的配置，指定它
+                accept = true;
+            } else if (previewRatio != screenRatio && size.width > previewSize.x) {
+                // 若比例不一致，则优先使用更高尺寸
+                accept = true;
+            } else if (sizeRatio == screenRatio && size.width > previewSize.x) {
+                // 若比例一致，尽可能找分辨率更高的
+                accept = true;
+            }
+
+            if (accept) {
+                previewSize.set(size.width, size.height);
                 previewRatio = sizeRatio;
             }
         }
 
-        Log.i(TAG, "set best preview size> width = " + mPreviewPictureSize.width + ", " +
-                "height = " + mPreviewPictureSize.height + ", ratio = " + previewRatio);
-        params.setPreviewSize(mPreviewPictureSize.width, mPreviewPictureSize.height);
+        Log.println(previewRatio == screenRatio ? Log.INFO : Log.WARN,
+                TAG,
+                String.format("set best preview size> width = %d, height = %d, ratio = %f",
+                        previewSize.x, previewSize.y, previewRatio));
+
+        mPreviewPictureSize.set(previewSize.x, previewSize.y);
+        params.setPreviewSize(mPreviewPictureSize.x, mPreviewPictureSize.y);
         mCamera.setParameters(params);
 
-        adjustViewSize(mPreviewPictureSize);
+        adjustPreviewViewSize();
+    }
+
+    /**
+     * 设置拍照尺寸
+     */
+    private void setBestPictureSize() {
+        Camera.Parameters params = mCamera.getParameters();
+        List<Camera.Size> supportedSizes = params.getSupportedPictureSizes();
+        float previewRatio = getRatio(mPreviewPictureSize.x, mPreviewPictureSize.y);
+        Log.i(TAG, String.format("Preview widget ratio=%f", previewRatio));
+
+        // 根据相机配置，尽可能设置与预览尺寸一致的更高分辨率的配置
+        float pictureRatio = 0;
+        Point pictureSize = new Point(0, 0);
+        for (Camera.Size size : supportedSizes) {
+            float sizeRatio = getRatio(size.width, size.height);
+
+            boolean accept = false;
+            if (pictureRatio != previewRatio && sizeRatio == previewRatio) {
+                // 若找到与预览比例一致的配置，指定它
+                accept = true;
+            } else if (pictureRatio != previewRatio && size.width > pictureSize.x
+                    && size.width < mPreferredWidth && size.height < mPreferredHeight) {
+                // 若比例不一致，则优先使用更高尺寸（但不必超过用户设定的最佳尺寸）
+                accept = true;
+            } else if (sizeRatio == previewRatio && size.width > pictureSize.x
+                    && size.width < mPreferredWidth && size.height < mPreferredHeight) {
+                // 若比例一致，尽可能找分辨率更高的
+                accept = true;
+            }
+
+            if (accept) {
+                pictureSize.set(size.width, size.height);
+                pictureRatio = sizeRatio;
+            }
+        }
+
+        Log.println(pictureRatio == previewRatio ? Log.INFO : Log.WARN,
+                TAG,
+                String.format("set best picture size> width = %d, height = %d, ratio = %f",
+                        pictureSize.x, pictureSize.y, pictureRatio));
+
+        mFullPictureSize = pictureSize;
+        params.setPictureSize(mFullPictureSize.x, mFullPictureSize.y);
+        mCamera.setParameters(params);
     }
 
     // Adjust SurfaceView size
-    private void adjustViewSize(Camera.Size size) {
+    private void adjustPreviewViewSize() {
 //        int picWidth = Math.max(size.width, size.height);
 //        int picHeight = Math.min(size.width, size.height);
 //        ViewGroup.LayoutParams layoutParams = this.getLayoutParams();
@@ -649,6 +684,10 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                 }
             }, 800);
         }
+    }
+
+    private float getRatio(int sideA, int sideB) {
+        return sideA > sideB ? (float) sideA / sideB : (float) sideB / sideA;
     }
 
     public interface TakePictureCallback {

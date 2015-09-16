@@ -21,6 +21,18 @@ public class CameraTestActivity extends BaseListActivity {
                 new PhotoHelper.PhotoBuilder(CameraTestActivity.this)
                         .setPortrait(true)
                         .setRatio(1, 1)
+                        .setPreferredSize(1080, 1080)
+                        .start();
+            }
+        }));
+
+        actions.add(new TestAction("Landscape 1:1 Camera", new Runnable() {
+            @Override
+            public void run() {
+                new PhotoHelper.PhotoBuilder(CameraTestActivity.this)
+                        .setPortrait(false)
+                        .setRatio(1, 1)
+                        .setPreferredSize(1080, 1080)
                         .start();
             }
         }));
@@ -31,6 +43,7 @@ public class CameraTestActivity extends BaseListActivity {
                 new PhotoHelper.PhotoBuilder(CameraTestActivity.this)
                         .setPortrait(false)
                         .setRatio(4, 3)
+                        .setPreferredSize(1920, 1440)
                         .start();
             }
         }));

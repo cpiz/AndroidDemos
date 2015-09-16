@@ -74,6 +74,9 @@ public class CropImageView extends FrameLayout {
     private int mImageResource = DEFAULT_IMAGE_RESOURCE;
     private ImageView.ScaleType mScaleType = VALID_SCALE_TYPES[DEFAULT_SCALE_TYPE];
 
+    private int mPreferredWidth = 9999;
+    private int mPreferredHeight = 9999;
+
     // Constructors ////////////////////////////////////////////////////////////
 
     public CropImageView(Context context) {
@@ -267,7 +270,7 @@ public class CropImageView extends FrameLayout {
 
     /**
      * Sets a Bitmap and initializes the image rotation according to the EXIT data.
-     * <p/>
+     * <p>
      * The EXIF can be retrieved by doing the following:
      * <code>ExifInterface exif = new ExifInterface(path);</code>
      *
@@ -358,6 +361,17 @@ public class CropImageView extends FrameLayout {
     }
 
     /**
+     * 设置导出图像的最佳尺寸，避免产生太大的图片
+     *
+     * @param preferredWidth  最佳宽度
+     * @param preferredHeight 最佳高度
+     */
+    public void setPreferredSize(int preferredWidth, int preferredHeight) {
+        mPreferredWidth = preferredWidth;
+        mPreferredHeight = preferredHeight;
+    }
+
+    /**
      * Gets the cropped image based on the current crop window.
      *
      * @return a new Bitmap representing the cropped image
@@ -394,11 +408,16 @@ public class CropImageView extends FrameLayout {
         final float actualCropHeight = cropWindowHeight * scaleFactorHeight;
 
         // Crop the subset from the original Bitmap.
+        Matrix matrix = new Matrix();
+        int scale = calculateInSampleSize((int) actualCropWidth, (int) actualCropHeight, mPreferredWidth, mPreferredHeight);
+        matrix.postScale(1 / (float) scale, 1 / (float) scale);
         final Bitmap croppedBitmap = Bitmap.createBitmap(mBitmap,
                 (int) actualCropX,
                 (int) actualCropY,
                 (int) actualCropWidth,
-                (int) actualCropHeight);
+                (int) actualCropHeight,
+                matrix,
+                false);
 
         return croppedBitmap;
     }
@@ -453,6 +472,31 @@ public class CropImageView extends FrameLayout {
                 actualCropBottom);
 
         return actualCropRect;
+    }
+
+    public static int calculateInSampleSize(final int rawWidth, final int rawHeight, final int reqWidth, final int reqHeight) {
+        // Raw height and width of image
+        int inSampleSize = 1;
+        if (rawHeight > reqHeight || rawWidth > reqWidth) {
+
+            final int halfHeight = rawHeight / 2;
+            final int halfWidth = rawWidth / 2;
+
+            while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth) {
+                inSampleSize *= 2;
+            }
+
+            long totalPixels = rawWidth / inSampleSize * rawHeight / inSampleSize;
+
+            final long totalReqPixelsCap = reqWidth * reqHeight * 2;
+
+            while (totalPixels > totalReqPixelsCap) {
+                inSampleSize *= 2;
+                totalPixels /= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     /**

@@ -2,16 +2,18 @@ package com.cpiz.android.controls;
 
 /**
  * 加强版ImageButton
- * <p>
+ * <p/>
  * 支持Check状态，setCheckable(true)之后点击按钮将自动触发Check/Uncheck
  * 支持通过app:tint属性设定一个颜色selector，根据按钮不同状态对图标进行染色
- * <p>
+ * <p/>
  * 参考 http://stackoverflow.com/questions/11095222/android-imageview-change-tint-to-simulate-button-click/18724834#18724834
  */
 
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -204,7 +206,12 @@ public class ImageButtonEx extends ImageButton implements Checkable {
 
     private void updateTintColor() {
         int color = mTint.getColorForState(getDrawableState(), 0);
-        setColorFilter(color);
+        if (Color.alpha(color) == 0xFF) {
+            setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        } else {
+            // 若Tint里带透明色，则使用MULTIPLY颜色
+            setColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        }
     }
 
     static class SavedState extends BaseSavedState {

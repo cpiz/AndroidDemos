@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
 import com.cpiz.android.playground.R;
 
 /**
+ * 支持指定纵横比例的 RelativeLayout 布局
  * Created by ruoshili on 8/28/15.
  */
 public class FixedRatioLayout extends RelativeLayout {

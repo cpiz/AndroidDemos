@@ -10,15 +10,15 @@ import android.graphics.Bitmap;
  * Created by caijw on 2015/9/11.
  */
 public class PhotoHelper {
-    protected static final String PORTRAIT = "PORTRAIT";            // 手机方向
-    protected static final String SOURCE_PATH = "SOURCE_PATH";      // 源文件路径，若指定，则只提供裁剪功能
-    protected static final String OUTPUT_PATH = "OUTPUT_PATH";      // 输出文件路径
-    protected static final String OUTPUT_RATIO = "OUTPUT_RATIO";    // 要求输出图像比例
-    protected static final String OUTPUT_QUALITY = "OUTPUT_QUALITY";// 图像保存质量
-    protected static final String SOURCE_OF_GALLERY = "GALLERY";    // 用来填入 SOURCE_PATH 中，表示从系统相册选择
+    public static final String SIZE = "SIZE";                           // 最终图像尺寸，输出用
 
-
-    protected static final String SIZE = "SIZE";                    // 最终图像尺寸
+    protected static final String PORTRAIT = "PORTRAIT";                // 手机方向
+    protected static final String SOURCE_PATH = "SOURCE_PATH";          // 源文件路径，若指定，则只提供裁剪功能
+    protected static final String OUTPUT_PATH = "OUTPUT_PATH";          // 输出文件路径
+    protected static final String OUTPUT_RATIO = "OUTPUT_RATIO";        // 要求输出图像比例
+    protected static final String PREFERRED_SIZE = "PREFERRED_SIZE";    // 指定最佳输出尺寸
+    protected static final String OUTPUT_QUALITY = "OUTPUT_QUALITY";    // 图像保存质量
+    protected static final String SOURCE_OF_GALLERY = "GALLERY";        // 用来填入 SOURCE_PATH 中，表示从系统相册选择
 
     private static Bitmap cacheBitmap;
 
@@ -106,13 +106,26 @@ public class PhotoHelper {
         }
 
         /**
+         * 设置输出图片的最佳尺寸，请确保比例与 setRatio 保持一致
+         * 输出图片将尽可能接近设定大小
+         *
+         * @param preferredWidth
+         * @param preferredHeight
+         * @return
+         */
+        public PhotoBuilder setPreferredSize(int preferredWidth, int preferredHeight) {
+            mIntent.putExtra(PREFERRED_SIZE, new int[]{preferredWidth, preferredHeight});
+            return this;
+        }
+
+        /**
          * 设置导出JPG图片的质量
          *
          * @param quality 图像质量，1~100，越高越清晰体积越大
          * @return
          */
         public PhotoBuilder setQuality(int quality) {
-            mIntent.putExtra(OUTPUT_RATIO, quality);
+            mIntent.putExtra(OUTPUT_QUALITY, quality);
             return this;
         }
 

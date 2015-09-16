@@ -70,6 +70,8 @@ public class CameraActivity extends Activity {
     private boolean mPortrait = true;
     private int mWidthRatio = 0;
     private int mHeightRatio = 0;
+    private int mPreferableWidth = 9999;
+    private int mPreferableHeight = 9999;
     private File mSourceFile = null;
     private File mOutputFile = null;
 
@@ -94,13 +96,22 @@ public class CameraActivity extends Activity {
             mWidthRatio = ratio[0];
             mHeightRatio = ratio[1];
         }
+        Log.i(TAG, String.format("Set picture ratio to width = %d, height = %d", mWidthRatio, mHeightRatio));
+
+        // 获得最佳图片尺寸
+        int[] preferredSize = getIntent().getIntArrayExtra(PhotoHelper.PREFERRED_SIZE);
+        if (preferredSize != null && preferredSize.length > 1) {
+            mPreferableWidth = preferredSize[0];
+            mPreferableHeight = preferredSize[1];
+        }
+        Log.i(TAG, String.format("Set preferred size to width = %d, height = %d", mPreferableWidth, mPreferableHeight));
 
         // 导出图像质量
         mQuality = getIntent().getIntExtra(PhotoHelper.OUTPUT_QUALITY, 70);
         if (mQuality <= 0 || mQuality >= 100) {
             mQuality = 70;
         }
-        Log.i(TAG, String.format("Set export quality to %d", mQuality));
+        Log.i(TAG, String.format("Set picture quality to %d", mQuality));
 
         // 获得原始图片来源
         String sourcePath = getIntent().getStringExtra(PhotoHelper.SOURCE_PATH);
@@ -200,6 +211,7 @@ public class CameraActivity extends Activity {
             mHeightRatio = mPreviewClipLayout.getHeightRatio();
         }
         mCropImageView.setAspectRatio(mWidthRatio, mHeightRatio);
+        mCropImageView.setPreferredSize(mPreferableWidth, mPreferableHeight);
         Log.i(TAG, String.format("Set aspect ratio widthRatio = %d, heightRatio = %d", mWidthRatio, mHeightRatio));
 
         cameraFlashBtn = (ImageButtonEx) findViewById(R.id.cameraFlashBtn);
@@ -290,6 +302,7 @@ public class CameraActivity extends Activity {
                 return;
             }
 
+            // 获得照片
             switchToCropMode();
             Uri uri = data.getData();
             if (uri != null) {
@@ -464,7 +477,6 @@ public class CameraActivity extends Activity {
     private void cancel() {
         if (mCropImageView.isShown() && mSourceMode == SourceMode.CameraGallery) {
             // Crop mode
-            PhotoHelper.clearCacheBitmap();
             switchToCameraMode();
         } else {
             Log.i(TAG, "Cancel and finish");
@@ -475,9 +487,9 @@ public class CameraActivity extends Activity {
 
     private void confirm() {
         Bitmap croppedBitmap = mCropImageView.getCroppedImage();
-
         if (saveBitmap2File(croppedBitmap, mOutputFile)) {
-            Log.i(TAG, String.format("Save picture to %s success", mOutputFile.getAbsoluteFile()));
+            Log.i(TAG, String.format("Save picture to [%s] success, size width = %d, height = %d",
+                    mOutputFile.getAbsoluteFile(), croppedBitmap.getWidth(), croppedBitmap.getHeight()));
 
             PhotoHelper.setCacheBitmap(croppedBitmap);
 
@@ -488,8 +500,6 @@ public class CameraActivity extends Activity {
             setResult(RESULT_OK, resultIntent);
 
             finish();
-
-            Log.i(TAG, String.format("Output picture size width = %d, height = %d", croppedBitmap.getWidth(), croppedBitmap.getHeight()));
         } else {
             Log.e(TAG, String.format("Save picture to %s failed", mOutputFile.getAbsoluteFile()));
         }
