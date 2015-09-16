@@ -1,5 +1,6 @@
 package com.cpiz.android.playground.TakePicture;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,6 +11,7 @@ import android.graphics.Bitmap;
  * Created by caijw on 2015/9/11.
  */
 public class PhotoHelper {
+    public static final int TAKE_PICTURE_REQUEST = 805;                 // 启动图片采集界面的 REQUEST_CODE
     public static final String SIZE = "SIZE";                           // 最终图像尺寸，输出用
 
     protected static final String PORTRAIT = "PORTRAIT";                // 手机方向
@@ -41,12 +43,12 @@ public class PhotoHelper {
      * 相机、截图构建器
      */
     public static final class PhotoBuilder {
-        private Context mContext;
+        private Activity mActivity;
         private Intent mIntent;
 
-        public PhotoBuilder(Context context) {
-            mContext = context;
-            mIntent = new Intent(context, CameraActivity.class);
+        public PhotoBuilder(Activity activity) {
+            mActivity = activity;
+            mIntent = new Intent(activity, CameraActivity.class);
         }
 
         /**
@@ -132,11 +134,12 @@ public class PhotoHelper {
         /**
          * 启动图片创建界面（相机/裁剪）
          * <p>
-         * Activity结束后，通过Intent.getData()获得输出图片路径
+         * Activity结束后，根据 TAKE_PICTURE_REQUEST 辨别返回结果
+         * 通过Intent.getData()获得输出图片路径
          * 通过Intent.getIntArrayExtra(SIZE)获得输出图片尺寸
          */
         public void start() {
-            mContext.startActivity(mIntent);
+            mActivity.startActivityForResult(mIntent, TAKE_PICTURE_REQUEST);
         }
     }
 }
