@@ -17,12 +17,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.ExifInterface;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -30,6 +32,7 @@ import android.widget.ImageView;
 import com.cpiz.android.playground.TakePicture.cropper.cropwindow.CropOverlayView;
 import com.cpiz.android.playground.TakePicture.cropper.cropwindow.edge.Edge;
 import com.cpiz.android.playground.TakePicture.cropper.util.ImageViewUtil;
+import com.cpiz.android.utils.DimensionUtil;
 
 import java.io.IOException;
 
@@ -38,6 +41,7 @@ import java.io.IOException;
  * Custom view that provides cropping capabilities to an image.
  */
 public class CropImageView extends FrameLayout {
+    private static final String TAG = "CropImageView";
 
     // Private Constants ///////////////////////////////////////////////////////
 
@@ -207,13 +211,6 @@ public class CropImageView extends FrameLayout {
             mLayoutWidth = width;
             mLayoutHeight = height;
 
-//            final Rect bitmapRect = ImageViewUtil.getBitmapRect(mBitmap.getWidth(),
-//                    mBitmap.getHeight(),
-//                    mLayoutWidth,
-//                    mLayoutHeight,
-//                    mScaleType);
-//            mCropOverlayView.setBitmapRect(bitmapRect);
-
             final Rect bitmapRect = ImageViewUtil.getBitmapRect(mBitmap, this, mScaleType);
             mCropOverlayView.setBitmapRect(bitmapRect);
 
@@ -258,8 +255,13 @@ public class CropImageView extends FrameLayout {
      */
     public boolean setImageBitmap(Bitmap bitmap) {
 
-        mBitmap = bitmap;
-        mImageView.setImageBitmap(mBitmap);
+        mBitmap = bitmap;   // bitmap to crop
+        Bitmap bitmapToDisplay = scaleImageToLayout(mBitmap); // bitmap to display
+
+        Log.d(TAG, String.format("set source bitmap width=%d, height=%d", bitmap.getWidth(), bitmap.getHeight()));
+        Log.d(TAG, String.format("scale bitmap to display width=%d, height=%d", bitmapToDisplay.getWidth(), bitmapToDisplay.getHeight()));
+
+        mImageView.setImageBitmap(bitmapToDisplay);
 
         if (mCropOverlayView != null) {
             mCropOverlayView.resetCropOverlayView();
@@ -396,8 +398,8 @@ public class CropImageView extends FrameLayout {
         final float scaleFactorHeight = actualImageHeight / displayedImageHeight;
 
         // Get crop window position relative to the displayed image.
-        final float cropWindowX = Edge.LEFT.getCoordinate() - displayedImageRect.left;
-        final float cropWindowY = Edge.TOP.getCoordinate() - displayedImageRect.top;
+        final float cropWindowX = Edge.LEFT.getCoordinate() > displayedImageRect.left ? Edge.LEFT.getCoordinate() - displayedImageRect.left : 0;
+        final float cropWindowY = Edge.TOP.getCoordinate() > displayedImageRect.top ? Edge.TOP.getCoordinate() - displayedImageRect.top : 0;
         final float cropWindowWidth = Edge.getWidth();
         final float cropWindowHeight = Edge.getHeight();
 
@@ -622,5 +624,24 @@ public class CropImageView extends FrameLayout {
 
         mCropOverlayView = new CropOverlayView(context);
         addView(mCropOverlayView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+    }
+
+    private Bitmap scaleImageToLayout(Bitmap srcBitmap) {
+        int layoutWidth = mLayoutWidth;
+        int layoutHeight = mLayoutHeight;
+        if (layoutWidth == 0 || layoutHeight == 0) {
+            Point screenSize = new Point();
+            DimensionUtil.getScreenSize(getContext(), screenSize);
+            layoutWidth = screenSize.x;
+            layoutHeight = screenSize.y;
+        }
+
+        int sampleSize = calculateInSampleSize(srcBitmap.getWidth(), srcBitmap.getHeight(), layoutWidth, layoutHeight);
+        if (sampleSize == 1) {
+            return srcBitmap;
+        } else {
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(srcBitmap, srcBitmap.getWidth() / sampleSize, srcBitmap.getHeight() / sampleSize, false);
+            return scaledBitmap;
+        }
     }
 }

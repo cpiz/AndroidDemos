@@ -314,7 +314,7 @@ public class CameraActivity extends Activity {
      * @param enabled
      */
     private void setCameraButtonsEnabled(boolean enabled) {
-        cameraFlashBtn.setEnabled(enabled);
+        cameraFlashBtn.setEnabled(enabled && !mFrontCamera); // 前置摄像头禁用闪光灯
         mTakePhotoBtn.setEnabled(enabled);
         mGalleryBtn.setEnabled(enabled);
     }

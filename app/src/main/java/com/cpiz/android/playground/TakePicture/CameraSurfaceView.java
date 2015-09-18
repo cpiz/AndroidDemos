@@ -185,6 +185,10 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private FlashMode mFlashMode = FlashMode.FLASH_OFF;
 
     public void setFlashMode(FlashMode mode) {
+        if (isFrontCamera()) {
+            return; // 前置相机不使用闪关灯
+        }
+
         if (mCamera != null) {
             Camera.Parameters parameters = mCamera.getParameters();
             switch (mode) {
@@ -563,13 +567,13 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             Log.v(TAG, String.format("Supported preview size > width = %d, height = %d, ratio = %f", size.width, size.height, sizeRatio));
 
             boolean accept = false;
-            if (previewRatio != screenRatio && sizeRatio == screenRatio) {
+            if (!almostEqual(previewRatio, screenRatio) && almostEqual(sizeRatio, screenRatio)) {
                 // 若找到与屏幕比例一致的配置，指定它
                 accept = true;
-            } else if (previewRatio != screenRatio && size.width > previewSize.x) {
+            } else if (!almostEqual(previewRatio, screenRatio) && size.width > previewSize.x) {
                 // 若比例不一致，则优先使用更高尺寸
                 accept = true;
-            } else if (sizeRatio == screenRatio && size.width > previewSize.x) {
+            } else if (almostEqual(sizeRatio, screenRatio) && size.width > previewSize.x) {
                 // 若比例一致，尽可能找分辨率更高的
                 accept = true;
             }
@@ -580,7 +584,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             }
         }
 
-        Log.println(previewRatio == screenRatio ? Log.INFO : Log.WARN,
+        Log.println(almostEqual(previewRatio, screenRatio) ? Log.INFO : Log.WARN,
                 TAG,
                 String.format("Set best preview size> width = %d, height = %d, ratio = %f",
                         previewSize.x, previewSize.y, previewRatio));
@@ -608,14 +612,14 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             Log.v(TAG, String.format("Supported picture size > width = %d, height = %d, ratio = %f", size.width, size.height, sizeRatio));
 
             boolean accept = false;
-            if (pictureRatio != previewRatio && sizeRatio == previewRatio) {
+            if (!almostEqual(pictureRatio, previewRatio) && almostEqual(sizeRatio, previewRatio)) {
                 // 若找到与预览比例一致的配置，指定它
                 accept = true;
-            } else if (pictureRatio != previewRatio && size.width > pictureSize.x
+            } else if (!almostEqual(pictureRatio, previewRatio) && size.width > pictureSize.x
                     && size.width < mPreferredWidth && size.height < mPreferredHeight) {
                 // 若比例不一致，则优先使用更高尺寸（但不必超过用户设定的最佳尺寸）
                 accept = true;
-            } else if (sizeRatio == previewRatio && size.width > pictureSize.x
+            } else if (almostEqual(sizeRatio, previewRatio) && size.width > pictureSize.x
                     && size.width < mPreferredWidth && size.height < mPreferredHeight) {
                 // 若比例一致，尽可能找分辨率更高的
                 accept = true;
@@ -627,7 +631,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             }
         }
 
-        Log.println(pictureRatio == previewRatio ? Log.INFO : Log.WARN,
+        Log.println(almostEqual(pictureRatio, previewRatio) ? Log.INFO : Log.WARN,
                 TAG,
                 String.format("Set best picture size> width = %d, height = %d, ratio = %f",
                         pictureSize.x, pictureSize.y, pictureRatio));
@@ -635,6 +639,17 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         mFullPictureSize = pictureSize;
         params.setPictureSize(mFullPictureSize.x, mFullPictureSize.y);
         mCamera.setParameters(params);
+    }
+
+    /**
+     * 返回两个比例是否近似一致
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    private boolean almostEqual(float a, float b) {
+        return Math.abs(a - b) <= 0.001f;
     }
 
     // Adjust SurfaceView size
@@ -800,4 +815,3 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         return inSampleSize;
     }
 }
-

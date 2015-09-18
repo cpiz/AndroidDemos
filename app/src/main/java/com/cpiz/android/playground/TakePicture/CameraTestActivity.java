@@ -1,8 +1,11 @@
 package com.cpiz.android.playground.TakePicture;
 
+import android.content.Intent;
+
 import com.cpiz.android.playground.BaseListActivity;
 import com.cpiz.android.playground.PlayHelper;
 import com.cpiz.android.playground.TestAction;
+import com.cpiz.android.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,5 +112,25 @@ public class CameraTestActivity extends BaseListActivity {
         }));
 
         return actions;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PhotoHelper.REQUEST_TAKE_PICTURE) {
+            if (resultCode != RESULT_OK) {
+                ToastUtils.show(this, "Canceled");
+                return;
+            }
+
+            String outputFile = data.getStringExtra(PhotoHelper.OUTPUT_PATH);
+            int[] size = data.getIntArrayExtra(PhotoHelper.OUTPUT_SIZE);
+            ToastUtils.show(this, String.format("Output picture path=[%s] size=%dx%d", outputFile, size[0], size[1]));
+
+            PhotoHelper.create(CameraTestActivity.this)
+                    .setPortrait(true)
+                    .setRatio(size[0], size[1])
+                    .setSourcePath(outputFile)
+                    .start();
+        }
     }
 }

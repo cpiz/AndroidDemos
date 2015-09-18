@@ -55,8 +55,7 @@ public class PhotoHelper {
         return new CameraLauncher(activity)
                 .setPortrait(true)
                 .setUseFrontCamera(false)
-                .setRatio(1, 1)
-                .setPreferredSize(1080, 1080);
+                .setRatio(1, 1);
     }
 
 
