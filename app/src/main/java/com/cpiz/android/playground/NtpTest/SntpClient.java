@@ -155,6 +155,15 @@ public class SntpClient {
     }
 
     /**
+     * 返回经过了对时调整的当前时间
+     *
+     * @return
+     */
+    public long getCorrectedNowTime() {
+        return getNtpTime() + SystemClock.elapsedRealtime() - getNtpTimeReference();
+    }
+
+    /**
      * Reads an unsigned 32 bit big endian number from the given offset in the buffer.
      */
     private long read32(byte[] buffer, int offset) {
