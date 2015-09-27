@@ -111,10 +111,8 @@ public class SntpClient {
             mNtpTime = responseTime + clockOffset;
             mNtpTimeReference = responseTicks;
             mRoundTripTime = roundTripTime;
-            Log.d(TAG, String.format("Sync time success, host=[%s], ip=[%s], usedtime=%d, diff=%d",
-                    host, address.getHostAddress(), responseTicks - requestTicks,
-                    (getNtpTime() + SystemClock.elapsedRealtime() - getNtpTimeReference()) -
-                            System.currentTimeMillis()));
+            Log.d(TAG, String.format("Sync time success, host=[%s], ip=[%s], diff=%d, roundtrip=%d",
+                    host, address.getHostAddress(), clockOffset, mRoundTripTime));
         } catch (Exception e) {
             Log.d(TAG, String.format("Sync time failed: host=[%s], error=%s", host, e.toString()));
             return false;
