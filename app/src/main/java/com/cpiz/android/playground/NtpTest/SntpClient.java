@@ -53,6 +53,8 @@ public class SntpClient {
     private long mNtpTimeReference;
     // round trip time in milliseconds
     private long mRoundTripTime;
+    // synced
+    private boolean mSynced = false;
 
     public SntpClient() {
         // set default by local time
@@ -122,6 +124,10 @@ public class SntpClient {
             }
         }
         return true;
+    }
+
+    public boolean isSynced() {
+        return mSynced;
     }
 
     /**
