@@ -314,7 +314,9 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
         Log.v(TAG, String.format("createBitmap x=%d, y=%d, width=%d, height=%d, matrix=%s",
                 outX, outY, outWidth, outHeight, outputMatrix.toString()));
         Bitmap output = Bitmap.createBitmap(source, outX, outY, outWidth, outHeight, outputMatrix, false);
-        source.recycle();
+        if (source != output) {
+            source.recycle();
+        }
 
         Log.d(TAG, "take picture step 3: on bitmap cropped");
         return output;
