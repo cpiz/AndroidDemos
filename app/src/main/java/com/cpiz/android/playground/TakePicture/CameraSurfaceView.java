@@ -26,6 +26,7 @@ import android.view.SurfaceView;
 import com.cpiz.android.common.RingtonePlayer;
 import com.cpiz.android.playground.R;
 import com.cpiz.android.utils.DimensionUtil;
+import com.cpiz.android.utils.StringUtils;
 import com.cpiz.android.utils.ToastUtils;
 
 import java.io.IOException;
@@ -179,35 +180,73 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     }
 
     public enum FlashMode {
-        FLASH_ON, FLASH_OFF, FLASH_AUTO
+        FLASH_ON, FLASH_TORCH, FLASH_OFF, FLASH_AUTO
     }
 
     private FlashMode mFlashMode = FlashMode.FLASH_OFF;
 
-    public void setFlashMode(FlashMode mode) {
-        if (isFrontCamera()) {
-            return; // 前置相机不使用闪关灯
+    public boolean setFlashMode(FlashMode mode) {
+        if (mCamera == null) {
+            return false;
         }
 
-        if (mCamera != null) {
-            Camera.Parameters parameters = mCamera.getParameters();
-            switch (mode) {
-                case FLASH_ON:
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);    // 常亮
-                    break;
-                case FLASH_OFF:
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                    break;
-                case FLASH_AUTO:
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-                    break;
-                default:
-                    break;
-            }
+        String modeName = "";
+        switch (mode) {
+            case FLASH_ON:
+                modeName = "on";
+                break;
+            case FLASH_TORCH:
+                modeName = "torch";
+                break;
+            case FLASH_OFF:
+                modeName = "off";
+                break;
+            case FLASH_AUTO:
+                modeName = "auto";
+                break;
+            default:
+                break;
+        }
 
-            Log.i(TAG, "set flash mode to " + parameters.getFlashMode());
-            mFlashMode = mode;
+        // 检测相机是否支持该模式
+        Camera.Parameters parameters = mCamera.getParameters();
+        boolean supported = false;
+        List<String> supportedList = parameters.getSupportedFlashModes();
+        if (supportedList != null) {
+            for (String m : supportedList) {
+                if (StringUtils.isEquals(m, modeName)) {
+                    supported = true;
+                    break;
+                }
+            }
+        }
+        if (!supported) {
+            Log.w(TAG, "Unsupport flash mode: " + modeName);
+            return false;
+        }
+
+        switch (mode) {
+            case FLASH_TORCH:
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);    // 常亮
+                break;
+            case FLASH_OFF:
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                break;
+            case FLASH_AUTO:
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+                break;
+            default:
+                break;
+        }
+
+        Log.i(TAG, "set flash mode to " + parameters.getFlashMode());
+        try {
             mCamera.setParameters(parameters);
+            mFlashMode = mode;
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Set flash mode failed", e);
+            return false;
         }
     }
 

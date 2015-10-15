@@ -35,9 +35,9 @@ import java.io.IOException;
  * 提供拍照、闪关灯、相册选择、二次确认、旋转、裁剪功能
  * 支持启动时通过Intent指定横竖屏模式、输入路径、输出路径、照片比例、导出质量
  * 通过 onActivityResult 的 Intent.getData 获得输出图片路径，getIntArrayExtra(OUTPUT_SIZE) 可获得图片尺寸
- * <p>
+ * <p/>
  * 请使用 PhotoHelper 调用此 Activity
- * <p>
+ * <p/>
  * Created by caijw on 2015/9/12.
  */
 public class CameraActivity extends Activity {
@@ -210,14 +210,16 @@ public class CameraActivity extends Activity {
         Log.i(TAG, String.format("Set aspect ratio widthRatio = %d, heightRatio = %d", mWidthRatio, mHeightRatio));
 
         cameraFlashBtn = (ImageButtonEx) findViewById(R.id.cameraFlashBtn);
-        cameraFlashBtn.setOnCheckedChangeListener(new ImageButtonEx.OnCheckedChangeListener() {
+        cameraFlashBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(ImageButtonEx button, boolean b) {
+            public void onClick(View v) {
                 Log.i(TAG, "on flash button clicked");
-                if (b) {
-                    mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_ON);
+                if ((cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_OFF))
+                        || (!cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_TORCH))) {
+                    cameraFlashBtn.setChecked(!cameraFlashBtn.isChecked());
                 } else {
-                    mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_OFF);
+                    cameraFlashBtn.setEnabled(false);
+                    ToastUtils.show(CameraActivity.this, "Flash unsupported");
                 }
             }
         });
@@ -314,7 +316,7 @@ public class CameraActivity extends Activity {
      * @param enabled
      */
     private void setCameraButtonsEnabled(boolean enabled) {
-        cameraFlashBtn.setEnabled(enabled && !mFrontCamera); // 前置摄像头禁用闪光灯
+        cameraFlashBtn.setEnabled(enabled);
         mTakePhotoBtn.setEnabled(enabled);
         mGalleryBtn.setEnabled(enabled);
     }
