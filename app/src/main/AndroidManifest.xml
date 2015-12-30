@@ -48,6 +48,7 @@
             android:screenOrientation="nosensor">
         </activity>
         <activity android:name=".NtpTest.NtpTestActivity"/>
+        <activity android:name=".MessTest.MessTestActivity"/>
     </application>
 
 </manifest>
