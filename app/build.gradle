@@ -25,6 +25,7 @@ android {
     }
 }
 
+
 dependencies {
     compile(fileTree(dir: 'libs', include: ['*.jar']))
     compile('com.android.support:appcompat-v7:22.0.0')
@@ -52,4 +53,6 @@ dependencies {
         exclude module: 'appcompat-v7'
         exclude module: 'support-annotations'
     }
+
+    compile('com.jakewharton:butterknife:7.0.1')
 }
