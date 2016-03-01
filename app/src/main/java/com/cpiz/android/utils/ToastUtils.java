@@ -1,6 +1,7 @@
 package com.cpiz.android.utils;
 
 import android.content.Context;
+import android.support.annotation.StringRes;
 import android.widget.Toast;
 
 /**
@@ -14,11 +15,11 @@ public class ToastUtils {
         throw new AssertionError();
     }
 
-    public static void show(Context context, int resId) {
+    public static void show(Context context, @StringRes int resId) {
         show(context, context.getResources().getText(resId), Toast.LENGTH_SHORT);
     }
 
-    public static void show(Context context, int resId, int duration) {
+    public static void show(Context context, @StringRes int resId, int duration) {
         show(context, context.getResources().getText(resId), duration);
     }
 
@@ -30,7 +31,7 @@ public class ToastUtils {
         Toast.makeText(context, text, duration).show();
     }
 
-    public static void show(Context context, int resId, Object... args) {
+    public static void show(Context context, @StringRes int resId, Object... args) {
         show(context, String.format(context.getResources().getString(resId), args), Toast.LENGTH_SHORT);
     }
 
@@ -38,7 +39,7 @@ public class ToastUtils {
         show(context, String.format(format, args), Toast.LENGTH_SHORT);
     }
 
-    public static void show(Context context, int resId, int duration, Object... args) {
+    public static void show(Context context, @StringRes int resId, int duration, Object... args) {
         show(context, String.format(context.getResources().getString(resId), args), duration);
     }
 

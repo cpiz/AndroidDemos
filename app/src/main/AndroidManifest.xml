@@ -50,6 +50,7 @@
         <activity android:name=".NtpTest.NtpTestActivity"/>
         <activity android:name=".MessTest.MessTestActivity"/>
         <activity android:name=".SmartDnsTest.SmartDnsTestActivity"/>
+        <activity android:name=".AnnotationsTest.AnnotationsActivity"/>
     </application>
 
 </manifest>
