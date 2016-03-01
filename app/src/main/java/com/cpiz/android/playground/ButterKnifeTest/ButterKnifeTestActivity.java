@@ -31,8 +31,7 @@ public class ButterKnifeTestActivity extends RxActivity {
     }
 
     @OnClick(R.id.btnLeft)
-        // bind method
-    void onLeftClick() {
+    void onLeftClick() { // bind method
         appendLine("LeftClick");
     }
 
