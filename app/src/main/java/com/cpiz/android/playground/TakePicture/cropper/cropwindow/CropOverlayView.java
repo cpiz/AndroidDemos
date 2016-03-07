@@ -407,7 +407,7 @@ public class CropOverlayView extends View {
 
         // Tells the attribute functions the crop window has already been
         // initialized
-        if (initializedCropWindow == false)
+        if (!initializedCropWindow)
             initializedCropWindow = true;
 
         // reset aspect ratio
@@ -422,18 +422,8 @@ public class CropOverlayView extends View {
 
                 Edge.TOP.setCoordinate(bitmapRect.top);
                 Edge.BOTTOM.setCoordinate(bitmapRect.bottom);
-
                 final float centerX = getWidth() / 2f;
-
-                // Limits the aspect ratio to no less than 40 wide or 40 tall
-                final float cropWidth = Math.max(mMinCropLength,
-                        AspectRatioUtil.calculateWidth(bitmapRect.top, bitmapRect.bottom, mTargetAspectRatio));
-
-                // Create new TargetAspectRatio if the original one does not fit
-                // the screen
-                if (cropWidth == mMinCropLength)
-                    mTargetAspectRatio = (mMinCropLength) / (Edge.BOTTOM.getCoordinate() - Edge.TOP.getCoordinate());
-
+                final float cropWidth = AspectRatioUtil.calculateWidth(bitmapRect.top, bitmapRect.bottom, mTargetAspectRatio);
                 final float halfCropWidth = cropWidth / 2f;
                 Edge.LEFT.setCoordinate(centerX - halfCropWidth);
                 Edge.RIGHT.setCoordinate(centerX + halfCropWidth);
@@ -442,20 +432,8 @@ public class CropOverlayView extends View {
 
                 Edge.LEFT.setCoordinate(bitmapRect.left);
                 Edge.RIGHT.setCoordinate(bitmapRect.right);
-
                 final float centerY = getHeight() / 2f;
-
-                // Limits the aspect ratio to no less than 40 wide or 40 tall
-                final float cropHeight = Math.max(mMinCropLength,
-                        AspectRatioUtil.calculateHeight(Edge.LEFT.getCoordinate(),
-                                Edge.RIGHT.getCoordinate(),
-                                mTargetAspectRatio));
-
-                // Create new TargetAspectRatio if the original one does not fit
-                // the screen
-                if (cropHeight == mMinCropLength)
-                    mTargetAspectRatio = (Edge.RIGHT.getCoordinate() - Edge.LEFT.getCoordinate()) / mMinCropLength;
-
+                final float cropHeight = AspectRatioUtil.calculateHeight(Edge.LEFT.getCoordinate(), Edge.RIGHT.getCoordinate(), mTargetAspectRatio);
                 final float halfCropHeight = cropHeight / 2f;
                 Edge.TOP.setCoordinate(centerY - halfCropHeight);
                 Edge.BOTTOM.setCoordinate(centerY + halfCropHeight);

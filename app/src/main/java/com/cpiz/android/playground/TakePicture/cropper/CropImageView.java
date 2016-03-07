@@ -416,8 +416,8 @@ public class CropImageView extends FrameLayout {
         final Bitmap croppedBitmap = Bitmap.createBitmap(mBitmap,
                 (int) actualCropX,
                 (int) actualCropY,
-                (int) actualCropWidth,
-                (int) actualCropHeight,
+                (int) Math.min(actualCropWidth, actualImageWidth),
+                (int) Math.min(actualCropHeight, actualImageHeight),
                 matrix,
                 false);
 
