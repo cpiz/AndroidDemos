@@ -2,9 +2,9 @@ package com.cpiz.android.controls;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
 import com.cpiz.android.playground.R;
@@ -52,9 +52,8 @@ public class FixedRatioLayout extends RelativeLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        final boolean portrait = (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
-
-        if (portrait) {
+        ViewGroup.LayoutParams params = getLayoutParams();
+        if (params.width == ViewGroup.LayoutParams.MATCH_PARENT) {
             int h = MeasureSpec.getSize(widthMeasureSpec) * heightRatio / widthRatio;
             int newHeightSpec = MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY);
             super.onMeasure(widthMeasureSpec, newHeightSpec);
