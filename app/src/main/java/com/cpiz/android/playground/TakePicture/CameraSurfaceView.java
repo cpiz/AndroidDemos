@@ -37,6 +37,7 @@ import java.util.TimerTask;
 /**
  * Created by caijw on 2015/3/27.
  */
+@SuppressWarnings({"deprecation", "unused"})
 public class CameraSurfaceView extends SurfaceView implements SensorEventListener, SurfaceHolder.Callback {
     private static final String TAG = "CameraSurfaceView";
 
@@ -57,7 +58,6 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
     private boolean mIsTakingPicture;
     private Point mFocusPoint = new Point();
     private Point mPreviewPictureSize = new Point();
-    private Point mFullPictureSize = new Point();
     private boolean mFrontCamera = false;
     private Rect mClipRect;
     private int mPreferredWidth = 9999;
@@ -676,8 +676,7 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
                 String.format("Set best picture size> width = %d, height = %d, ratio = %f",
                         pictureSize.x, pictureSize.y, pictureRatio));
 
-        mFullPictureSize = pictureSize;
-        params.setPictureSize(mFullPictureSize.x, mFullPictureSize.y);
+        params.setPictureSize(pictureSize.x, pictureSize.y);
         mCamera.setParameters(params);
     }
 
