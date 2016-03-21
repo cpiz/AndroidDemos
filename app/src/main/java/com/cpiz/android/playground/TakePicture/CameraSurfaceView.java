@@ -16,7 +16,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.AttributeSet;
-import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -69,9 +68,9 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
     // 静止触发自动对焦
     private SensorManager mSensorManager;
-    private float mLastX;
-    private float mLastY;
-    private float mLastZ;
+    private double mLastX;
+    private double mLastY;
+    private double mLastZ;
     private long mLastMotionlessTime;
     private boolean mIsFocused;
 
@@ -425,16 +424,16 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float x = event.values[0];
-        float y = event.values[1];
-        float z = event.values[2];
-        float dx = x - mLastX;
-        float dy = y - mLastY;
-        float dz = z - mLastZ;
+        double x = event.values[0];
+        double y = event.values[1];
+        double z = event.values[2];
+        double dx = x - mLastX;
+        double dy = y - mLastY;
+        double dz = z - mLastZ;
         mLastX = x;
         mLastY = y;
         mLastZ = z;
-        float delta = FloatMath.sqrt(dx * dx + dy * dy + dz * dz);
+        double delta = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         // 持握朝向判断
         int newRotation = mCurrentRotation;
