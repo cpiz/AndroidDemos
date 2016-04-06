@@ -1,6 +1,7 @@
 package com.cpiz.android.playground;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -97,14 +98,33 @@ public abstract class BaseTestActivity extends RxActivity {
     }
 
     public void clearEdit() {
-        mEditText.getText().clear();
+        if (Looper.myLooper() == getMainLooper()) {
+            mEditText.getText().clear();
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mEditText.getText().clear();
+                }
+            });
+        }
+
     }
 
-    public void appendLine(String str) {
-        mEditText.append(str + "\n");
+    public void appendLine(final String str) {
+        if (Looper.myLooper() == getMainLooper()) {
+            mEditText.append(str + "\n");
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mEditText.append(str + "\n");
+                }
+            });
+        }
     }
 
     public void appendLine() {
-        mEditText.append("\n");
+        appendLine("\n");
     }
 }

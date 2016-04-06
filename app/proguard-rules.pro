@@ -16,11 +16,13 @@
 #   public *;
 #}
 
--keepclassmembers class ** {
-    public void onEvent*(**);
-}
 
-# Only required if you use AsyncExecutor
--keepclassmembers class * extends de.greenrobot.event.util.ThrowableFailureEvent {
-    <init>(java.lang.Throwable);
-}
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+-keepattributes Signature
+-keepattributes Exceptions
+
+
+-keep class com.bluelinelabs.logansquare.** { *; }
+-keep @com.bluelinelabs.logansquare.annotation.JsonObject class *
+-keep class **$$JsonObjectMapper { *; }

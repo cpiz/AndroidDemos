@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="FixedRatioLayout">
-        <attr name="widthRatio" format="integer" />
-        <attr name="heightRatio" format="integer" />
+        <attr name="widthRatio" format="integer"/>
+        <attr name="heightRatio" format="integer"/>
+        <attr name="baseOn">
+            <enum name="width" value="1"/>
+            <enum name="height" value="2"/>
+        </attr>
     </declare-styleable>
 </resources>

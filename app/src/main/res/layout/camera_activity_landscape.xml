@@ -45,6 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_toRightOf="@id/titleBar"
+        app:baseOn="height"
         app:heightRatio="3"
         app:widthRatio="4">
 

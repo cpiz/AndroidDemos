@@ -10,25 +10,22 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.squareup.okhttp.Dns;
-import com.squareup.okhttp.OkHttpClient;
+import com.cpiz.android.common.OkHttpHelper;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import retrofit.RestAdapter;
-import retrofit.client.OkClient;
-import retrofit.client.Response;
-import retrofit.http.GET;
-import retrofit.http.Query;
-import retrofit.mime.TypedInput;
+import okhttp3.Dns;
+import okhttp3.ResponseBody;
+import retrofit2.Response;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action0;
@@ -48,12 +45,11 @@ public enum SmartDns implements Dns {
     private static final String TAG = "SmartDns";
     private static final String HTTPDNS_API_ENDPOINT = "http://119.29.29.29";   // DnsPod
     private static Pattern IP_PATTERN = Pattern.compile("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$");
-    private static final long HTTP_CONN_TIMEOUT_MS = 4000;
     private static final long LOOKUP_TIMEOUT_MS = 4500;
     private static final long TASK_WAIT_TIMEOUT_MS = 5000;
     private static final long CACHE_EXPIRE_TIME_MS = 5 * 60 * 1000;
 
-    private final OkClient mHttpClient;
+    private final HttpDnsService mHttpDnsService;
     private final ConcurrentHashMap<String, InetAddressCache> mAddressCaches = new ConcurrentHashMap<>();
     private BroadcastReceiver mNetworkChangedReceiver = null;
     private Func1<Throwable, Observable<? extends List<InetAddress>>> mResumeError = null;
@@ -77,15 +73,16 @@ public enum SmartDns implements Dns {
     }
 
     SmartDns() {
-        final OkHttpClient client = new OkHttpClient();
-        client.setConnectTimeout(HTTP_CONN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        mHttpClient = new OkClient(client);
         mResumeError = new Func1<Throwable, Observable<? extends List<InetAddress>>>() {
             @Override
             public Observable<? extends List<InetAddress>> call(Throwable throwable) {
                 return Observable.empty();
             }
         };
+        mHttpDnsService = new RxServiceBuilder()
+                .client(OkHttpHelper.newClient())
+                .baseUrl(HTTPDNS_API_ENDPOINT)
+                .create(HttpDnsService.class);
     }
 
     public void init(Application app) {
@@ -151,6 +148,7 @@ public enum SmartDns implements Dns {
                     }
                 });
 
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (ret) {
             if (!ret.isEmpty()) {
                 return ret;
@@ -282,33 +280,30 @@ public enum SmartDns implements Dns {
             }
         }
 
-        final RestAdapter adapter = new RestAdapter.Builder()
-                .setClient(mHttpClient)
-                .setEndpoint(HTTPDNS_API_ENDPOINT)
-                .build();
-        return adapter.create(HttpDnsService.class)
+        return mHttpDnsService
                 .lookup(hostname)
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
                 .timeout(LOOKUP_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .flatMap(new Func1<Response, Observable<List<InetAddress>>>() {
+                .flatMap(new Func1<Response<ResponseBody>, Observable<List<InetAddress>>>() {
                     @Override
-                    public Observable<List<InetAddress>> call(Response response) {
-                        final int status = response.getStatus();
+                    public Observable<List<InetAddress>> call(Response<ResponseBody> response) {
+                        final int status = response.code();
                         if (status < 200 || status >= 300) {
                             Log.w(TAG, "response status not ok, status: " + status);
                             return Observable.empty();
                         }
 
-                        final TypedInput ti = response.getBody();
-                        if (ti == null || ti.length() == 0) {
+                        final ResponseBody data = response.body();
+                        if (data == null || data.contentLength() == 0) {
                             Log.w(TAG, "lookupViaHttpDns, empty result");
                             return Observable.empty();
                         }
 
                         try {
                             final List<InetAddress> ret = new ArrayList<>();
-                            Scanner scanner = new Scanner(ti.in()).useDelimiter(";");
-                            while (scanner.hasNext()) {
-                                final String ip = scanner.next();
+                            String[] ipArray = data.string().split(";");
+                            for (String ip : ipArray) {
                                 InetAddress address = InetAddress.getByName(ip);
                                 ret.add(InetAddress.getByAddress(hostname, address.getAddress()));
                             }
@@ -325,7 +320,7 @@ public enum SmartDns implements Dns {
 
     private interface HttpDnsService {
         @GET("/d")
-        Observable<Response> lookup(
+        Observable<Response<ResponseBody>> lookup(
                 @Query("dn") final String name
         );
     }

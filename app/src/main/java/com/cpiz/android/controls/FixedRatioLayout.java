@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
 import com.cpiz.android.playground.R;
@@ -15,7 +14,8 @@ import com.cpiz.android.playground.R;
  */
 public class FixedRatioLayout extends RelativeLayout {
     private static final String TAG = "FixedRatioLayout";
-    int widthRatio, heightRatio;
+    private int mWidthRatio, mHeightRatio;
+    private boolean mBaseOnWidth = true;
 
     public FixedRatioLayout(Context context) {
         super(context);
@@ -36,13 +36,32 @@ public class FixedRatioLayout extends RelativeLayout {
         init(context, attrs, defStyleAttr);
     }
 
+    public int getHeightRatio() {
+        return mHeightRatio;
+    }
+
+    public int getWidthRatio() {
+        return mWidthRatio;
+    }
+
+    public void setRatio(int widthRatio, int heightRatio) {
+        if (mWidthRatio == widthRatio && mHeightRatio == heightRatio) {
+            return;
+        }
+        this.mWidthRatio = widthRatio;
+        this.mHeightRatio = heightRatio;
+        requestLayout();
+    }
+
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         TypedArray typedArray = null;
         try {
             typedArray = context.obtainStyledAttributes(attrs,
                     R.styleable.FixedRatioLayout, defStyleAttr, 0);
-            widthRatio = typedArray.getInteger(R.styleable.FixedRatioLayout_widthRatio, 1);
-            heightRatio = typedArray.getInteger(R.styleable.FixedRatioLayout_heightRatio, 1);
+
+            mWidthRatio = typedArray.getInteger(R.styleable.FixedRatioLayout_widthRatio, 0);
+            mHeightRatio = typedArray.getInteger(R.styleable.FixedRatioLayout_heightRatio, 0);
+            mBaseOnWidth = typedArray.getInt(R.styleable.FixedRatioLayout_baseOn, 1) == 1;
         } finally {
             if (typedArray != null) {
                 typedArray.recycle();
@@ -52,29 +71,19 @@ public class FixedRatioLayout extends RelativeLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        ViewGroup.LayoutParams params = getLayoutParams();
-        if (params.width == ViewGroup.LayoutParams.MATCH_PARENT) {
-            int h = MeasureSpec.getSize(widthMeasureSpec) * heightRatio / widthRatio;
+        if (mHeightRatio == 0 || mWidthRatio == 0) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+
+        if (mBaseOnWidth) {
+            int h = MeasureSpec.getSize(widthMeasureSpec) * mHeightRatio / mWidthRatio;
             int newHeightSpec = MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY);
             super.onMeasure(widthMeasureSpec, newHeightSpec);
         } else {
-            final int w = MeasureSpec.getSize(heightMeasureSpec) * widthRatio / heightRatio;
+            final int w = MeasureSpec.getSize(heightMeasureSpec) * mWidthRatio / mHeightRatio;
             int newWidthSpec = MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY);
             super.onMeasure(newWidthSpec, heightMeasureSpec);
         }
-    }
-
-    public void setRatio(int widthRatio, int heightRatio) {
-        this.widthRatio = widthRatio;
-        this.heightRatio = heightRatio;
-        requestLayout();
-    }
-
-    public int getWidthRatio() {
-        return widthRatio;
-    }
-
-    public int getHeightRatio() {
-        return heightRatio;
     }
 }

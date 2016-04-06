@@ -1,12 +1,12 @@
 package com.cpiz.android.playground.OkHttpSpeedLimit;
 
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.internal.Util;
 
 import java.io.File;
 import java.io.IOException;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import okhttp3.internal.Util;
 import okio.BufferedSink;
 import okio.Okio;
 import okio.Source;
@@ -14,11 +14,11 @@ import okio.Source;
 /**
  * Created by caijw on 2015/9/7.
  */
-public class LimitRequestBody {
-    private static final String TAG = "LimitRequestBody";
+public class LimitSpeedRequestBody {
+    private static final String TAG = "LimitSpeedRequestBody";
 
     private static final int SEGMENT_SIZE = 2048; // okio.Segment.OUTPUT_SIZE
-    private static final int MAX_BYTES_PER_SECOND = 20 * 1024;
+    private static final int MAX_BYTES_PER_SECOND = 200 * 1024;
 
     /**
      * Returns a new request body that transmits the content of {@code file}.

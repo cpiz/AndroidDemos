@@ -2,20 +2,22 @@ package com.cpiz.android.playground.RetrofitTest;
 
 import android.util.Log;
 
+import com.cpiz.android.common.OkHttpHelper;
 import com.cpiz.android.playground.BaseTestActivity;
-import com.cpiz.android.utils.RxServicesFactory;
+import com.cpiz.android.utils.RxServiceBuilder;
 import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;
 
-import retrofit.http.GET;
-import retrofit.http.Path;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * Retrofit使用
@@ -36,13 +38,19 @@ public class RetrofitTestActivity extends BaseTestActivity {
             }
         });
 
-        Observable<GitUser> obRemote = RxServicesFactory.getService(IService.class).getUser("cpiz").doOnNext(new Action1<GitUser>() {
-            @Override
-            public void call(GitUser gitUser) {
-                mGitUser = gitUser;
-                Log.i(TAG, "set data to cache");
-            }
-        });
+        Observable<GitUser> obRemote = new RxServiceBuilder()
+                .client(OkHttpHelper.newClient())
+                .create(IService.class)
+                .getUser("cpiz")
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .doOnNext(new Action1<GitUser>() {
+                    @Override
+                    public void call(GitUser gitUser) {
+                        mGitUser = gitUser;
+                        Log.i(TAG, "set data to cache");
+                    }
+                });
 
         Observable.concat(obCache, obRemote)
                 .first(new Func1<GitUser, Boolean>() {
@@ -83,10 +91,20 @@ public class RetrofitTestActivity extends BaseTestActivity {
         int id;
         String avatar_url;
         String url;
+
+        @Override
+        public String toString() {
+            return "GitUser{" +
+                    "login='" + login + '\'' +
+                    ", id=" + id +
+                    ", avatar_url='" + avatar_url + '\'' +
+                    ", url='" + url + '\'' +
+                    '}';
+        }
     }
 
     private interface IService {
-        @GET("/users/{username}")
+        @GET("https://api.github.com/users/{username}")
         Observable<GitUser> getUser(
                 @Path("username") String username
         );
