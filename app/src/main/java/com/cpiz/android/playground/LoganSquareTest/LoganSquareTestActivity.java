@@ -1,7 +1,6 @@
 package com.cpiz.android.playground.LoganSquareTest;
 
 import android.os.SystemClock;
-import android.util.Log;
 
 import com.bluelinelabs.logansquare.LoganSquare;
 import com.bluelinelabs.logansquare.annotation.JsonField;
@@ -28,59 +27,64 @@ public class LoganSquareTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        String json = "{\"id\":98134,\"name\":\"xiaoming\",\"gender\":true,\"birth\":\"2016-04-05\",\"parentId\":1241234123412}";
-        String json2 = null;
-        Gson gson = new Gson();
-        Person1 p1 = gson.fromJson(json, Person1.class);
-        Person2 p2 = null;
-        try {
-            p2 = LoganSquare.parse(json, Person2.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String json = "{\"id\":98134,\"name\":\"xiaoming\",\"gender\":true,\"birth\":\"2016-04-05\",\"parentId\":1241234123412}";
+                String json2 = null;
+                Gson gson = new Gson();
+                Person1 p1 = gson.fromJson(json, Person1.class);
+                Person2 p2 = null;
+                try {
+                    p2 = LoganSquare.parse(json, Person2.class);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-        long beginTime = 0, endTime = 0;
+                long beginTime = 0, endTime = 0;
 
-        beginTime = SystemClock.elapsedRealtime();
-        for (int i = 0; i < LOOP_CYCLE; ++i) {
-            gson.fromJson(json, Person1.class);
-        }
-        endTime = SystemClock.elapsedRealtime();
-        Log.i(TAG, String.format("Gson deserialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
+                beginTime = SystemClock.elapsedRealtime();
+                for (int i = 0; i < LOOP_CYCLE; ++i) {
+                    gson.fromJson(json, Person1.class);
+                }
+                endTime = SystemClock.elapsedRealtime();
+                appendLine(String.format("Gson deserialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
 
 
-        beginTime = SystemClock.elapsedRealtime();
-        try {
-            for (int i = 0; i < LOOP_CYCLE; ++i) {
-                LoganSquare.parse(json, Person2.class);
+                beginTime = SystemClock.elapsedRealtime();
+                try {
+                    for (int i = 0; i < LOOP_CYCLE; ++i) {
+                        LoganSquare.parse(json, Person2.class);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                endTime = SystemClock.elapsedRealtime();
+                appendLine(String.format("LoganSquare deserialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
+
+
+                beginTime = SystemClock.elapsedRealtime();
+                for (int i = 0; i < LOOP_CYCLE; ++i) {
+                    json2 = gson.toJson(p1);
+                }
+                endTime = SystemClock.elapsedRealtime();
+                appendLine(String.format("Gson serialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
+                appendLine(String.format("Gson serialize result: %s", json2));
+
+
+                beginTime = SystemClock.elapsedRealtime();
+                try {
+                    for (int i = 0; i < LOOP_CYCLE; ++i) {
+                        json2 = LoganSquare.serialize(p2);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                endTime = SystemClock.elapsedRealtime();
+                appendLine(String.format("LoganSquare serialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
+                appendLine(String.format("LoganSquare serialize result: %s", json2));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        endTime = SystemClock.elapsedRealtime();
-        Log.i(TAG, String.format("LoganSquare deserialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
-
-
-        beginTime = SystemClock.elapsedRealtime();
-        for (int i = 0; i < LOOP_CYCLE; ++i) {
-            json2 = gson.toJson(p1);
-        }
-        endTime = SystemClock.elapsedRealtime();
-        Log.i(TAG, String.format("Gson serialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
-        Log.i(TAG, String.format("Gson serialize result: %s", json2));
-
-
-        beginTime = SystemClock.elapsedRealtime();
-        try {
-            for (int i = 0; i < LOOP_CYCLE; ++i) {
-                json2 = LoganSquare.serialize(p2);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        endTime = SystemClock.elapsedRealtime();
-        Log.i(TAG, String.format("LoganSquare serialize %d times cost %dms", LOOP_CYCLE, endTime - beginTime));
-        Log.i(TAG, String.format("LoganSquare serialize result: %s", json2));
+        }).run();
     }
 
     public static class Person1 {
