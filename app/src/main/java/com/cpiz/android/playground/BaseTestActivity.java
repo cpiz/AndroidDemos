@@ -26,7 +26,7 @@ public abstract class BaseTestActivity extends RxActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        setContentView(R.layout.base_activity);
+        initContentView();
 
         mLeftBtn = (Button) findViewById(R.id.btnLeft);
         mLeftBtn.setOnClickListener(new View.OnClickListener() {
@@ -47,6 +47,10 @@ public abstract class BaseTestActivity extends RxActivity {
         mEditText = (EditText) findViewById(R.id.editText);
 
         Log.d(TAG, "onCreate");
+    }
+
+    protected void initContentView() {
+        setContentView(R.layout.base_activity);
     }
 
     @Override

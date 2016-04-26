@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="6dp"
+                android:background="#F4F4F4">
+
+    <View
+        android:id="@+id/centerOfButtons"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="30dp"/>
+
+    <Button
+        android:id="@+id/btnLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_toLeftOf="@+id/centerOfButtons"
+        android:background="#34495E"
+        android:text="Test"
+        android:textColor="#F4F4F4"/>
+
+    <Button
+        android:id="@+id/btnRight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_toRightOf="@id/centerOfButtons"
+        android:background="#34495E"
+        android:text="Clear"
+        android:textColor="#F4F4F4"/>
+
+    <com.cpiz.android.playground.InputOnlyEditTextTest.InputOnlyEditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_above="@id/btnLeft"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/edit_text_bg"
+        android:gravity="top"
+        android:padding="4dp"/>
+
+</RelativeLayout>

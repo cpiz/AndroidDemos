@@ -64,6 +64,23 @@ public class StringUtils {
         return ObjectUtils.isEquals(actual, expected);
     }
 
+    public static boolean isEquals(CharSequence actual, CharSequence expected) {
+        if (actual == expected) {
+            return true;
+        } else if (actual != null && expected != null) {
+            if (actual.length() == expected.length()) {
+                for (int i =0; i < actual.length(); ++i) {
+                    if (actual.charAt(i) != expected.charAt(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     /**
      * get length of CharSequence
      * 
