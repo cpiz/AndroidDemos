@@ -8,7 +8,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.0.0'
+        classpath 'com.android.tools.build:gradle:2.1.0'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -22,4 +22,8 @@ allprojects {
             url "http://maven.oschina.net/content/groups/public/"
         }
     }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13' //we want gradle 2.13 to run this project
 }
