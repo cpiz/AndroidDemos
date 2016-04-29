@@ -1,4 +1,4 @@
-package com.cpiz.android.playground.ButterKnifeTest;
+package com.cpiz.android.playground.butterKnifeTest;
 
 import android.os.Bundle;
 import android.widget.EditText;
@@ -6,8 +6,8 @@ import android.widget.EditText;
 import com.cpiz.android.playground.R;
 import com.trello.rxlifecycle.components.RxActivity;
 
-import butterknife.Bind;
 import butterknife.BindString;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -15,7 +15,7 @@ import butterknife.OnClick;
  * Created by caijw on 2016/3/1.
  */
 public class ButterKnifeTestActivity extends RxActivity {
-    @Bind(R.id.editText)
+    @BindView(R.id.editText)
     EditText mEditText; // bind view
 
     @BindString(R.string.app_name)

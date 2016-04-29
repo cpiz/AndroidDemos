@@ -53,7 +53,7 @@
         <activity android:name=".MessTest.MessTestActivity"/>
         <activity android:name=".SmartDnsTest.SmartDnsTestActivity"/>
         <activity android:name=".AnnotationsTest.AnnotationsActivity"/>
-        <activity android:name=".ButterKnifeTest.ButterKnifeTestActivity"/>
+        <activity android:name=".butterKnifeTest.ButterKnifeTestActivity"/>
         <activity android:name=".InputOnlyEditTextTest.InputOnlyEditTextActivity"/>
     </application>
 
