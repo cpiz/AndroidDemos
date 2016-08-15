@@ -38,7 +38,7 @@ public class OkHttpTestActivity extends BaseTestActivity {
                         .addFormDataPart("image", imagePath, LimitSpeedRequestBody.create(MediaType.parse("*/*"), new File(imagePath)))
                         .build();
                 Request request = new Request.Builder()
-                        .url("http://172.25.55.8/temp/")
+                        .url("http://172.26.68.34/temp/")
                         .post(body)
                         .build();
                 try {
