@@ -24,33 +24,30 @@ public class OkHttpTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                OkHttpClient client = new OkHttpClient.Builder()
-                        .addNetworkInterceptor(new StethoInterceptor())
-                        .build();
+        new Thread(() -> {
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addNetworkInterceptor(new StethoInterceptor())
+                    .build();
 
-                String imagePath = PlayHelper.getLatestPicture(OkHttpTestActivity.this);
+            String imagePath = PlayHelper.getLatestPicture(OkHttpTestActivity.this);
 
-                RequestBody body = new MultipartBody.Builder()
-                        .setType(MultipartBody.FORM)
-                        .addFormDataPart("image", imagePath, LimitSpeedRequestBody.create(MediaType.parse("*/*"), new File(imagePath)))
-                        .build();
-                Request request = new Request.Builder()
-                        .url("http://172.26.68.34/temp/")
-                        .post(body)
-                        .build();
-                try {
-                    appendLine(String.format("Start upload file [%s]", imagePath));
-                    Response response = client.newCall(request).execute();
-                    if (!response.isSuccessful()) {
-                        throw new IOException("Unexpected code " + response);
-                    }
-                    appendLine(String.format("Upload file [%s] success", imagePath));
-                } catch (IOException ex) {
-                    Log.e(TAG, String.format("Upload file [%s] failed", imagePath), ex);
+            RequestBody body = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("image", imagePath, LimitSpeedRequestBody.create(MediaType.parse("*/*"), new File(imagePath)))
+                    .build();
+            Request request = new Request.Builder()
+                    .url("http://172.26.68.34/temp/")
+                    .post(body)
+                    .build();
+            try {
+                appendLine(String.format("Start upload file [%s]", imagePath));
+                Response response = client.newCall(request).execute();
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
                 }
+                appendLine(String.format("Upload file [%s] success", imagePath));
+            } catch (IOException ex) {
+                Log.e(TAG, String.format("Upload file [%s] failed", imagePath), ex);
             }
         }).start();
     }

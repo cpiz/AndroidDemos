@@ -23,14 +23,11 @@ public class JsonMessageTestActivity extends BaseTestActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         RxBus.getDefault().register(OrderCreatedMsg.class)
-                .subscribe(new Action1<OrderCreatedMsg>() {
-                    @Override
-                    public void call(OrderCreatedMsg orderCreatedMsg) {
-                        String destJson = orderCreatedMsg.toJson();
-                        appendLine(String.format("received a message[%s]", orderCreatedMsg.getClass().getSimpleName()));
-                        appendLine(destJson);
-                        appendLine();
-                    }
+                .subscribe(orderCreatedMsg -> {
+                    String destJson = orderCreatedMsg.toJson();
+                    appendLine(String.format("received a message[%s]", orderCreatedMsg.getClass().getSimpleName()));
+                    appendLine(destJson);
+                    appendLine();
                 });
     }
 

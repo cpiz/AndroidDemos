@@ -26,44 +26,36 @@ public class OkHttpHelper {
     private static final String HEADER_REQ_ID = "ReqId";
     private static final AtomicLong SeqGenerator = new AtomicLong(0);
 
-    private static final HttpLoggingInterceptor LogInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
-        @Override
-        public void log(String message) {
-            Log.v(TAG, message);
-        }
-    });
+    private static final HttpLoggingInterceptor LogInterceptor = new HttpLoggingInterceptor(message -> Log.v(TAG, message));
     static {
         LogInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
-    private static final Interceptor RequestInterceptor = new Interceptor() {
-        @Override
-        public Response intercept(Chain chain) throws IOException {
-            NetworkInfo networkInfo = getNetworkInfo();
-            if (networkInfo == null || !(networkInfo.isConnected() || (networkInfo.isAvailable() && networkInfo.isConnectedOrConnecting()))) {
-                throw new ConnectException("Network is disconnected");
-            }
+    private static final Interceptor RequestInterceptor = chain -> {
+        NetworkInfo networkInfo = getNetworkInfo();
+        if (networkInfo == null || !(networkInfo.isConnected() || (networkInfo.isAvailable() && networkInfo.isConnectedOrConnecting()))) {
+            throw new ConnectException("Network is disconnected");
+        }
 
-            // 为每一个请求唯一reqId
-            final String reqId = String.format("%05d.%s", SeqGenerator.getAndIncrement(), networkInfo.getTypeName());
+        // 为每一个请求唯一reqId
+        final String reqId = String.format("%05d.%s", SeqGenerator.getAndIncrement(), networkInfo.getTypeName());
 
-            final Request preRequest = chain.request();
-            Request request = preRequest.newBuilder()
-                    .url(preRequest.url())
-                    .addHeader(HEADER_REQ_ID, reqId)
-                    .build();
+        final Request preRequest = chain.request();
+        Request request = preRequest.newBuilder()
+                .url(preRequest.url())
+                .addHeader(HEADER_REQ_ID, reqId)
+                .build();
 
-            long beginTime = System.nanoTime();
-            onBeforeRequest(reqId, request);
+        long beginTime = System.nanoTime();
+        onBeforeRequest(reqId, request);
 
-            try {
-                Response response = chain.proceed(request);
-                onAfterRequest(reqId, request, response, beginTime, System.nanoTime());
-                return response;
-            } catch (IOException ex) {
-                onRequestError(reqId, request, beginTime, System.nanoTime(), ex);
-                throw ex;
-            }
+        try {
+            Response response = chain.proceed(request);
+            onAfterRequest(reqId, request, response, beginTime, System.nanoTime());
+            return response;
+        } catch (IOException ex) {
+            onRequestError(reqId, request, beginTime, System.nanoTime(), ex);
+            throw ex;
         }
     };
 

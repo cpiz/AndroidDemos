@@ -29,60 +29,20 @@ public class RxBusTestActivity extends BaseTestActivity {
         RxBus.getDefault().post(new TestEvent("test 0"));   // post before register
 
         RxBus.getDefault().registerOnActivity(TestEvent.class, this)
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnActivity doOnSubscribe");
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnActivity doOnUnsubscribe");
-                    }
-                })
-                .doOnTerminate(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnActivity doOnTerminate");
-                    }
-                })
-                .subscribe(new Action1<TestEvent>() {
-                    @Override
-                    public void call(TestEvent testEvent) {
-                        appendLine(String.format("Got event[%s] registerOnActivity", testEvent.getEvent()));
-                    }
+                .doOnSubscribe(() -> Log.i(TAG, "registerOnActivity doOnSubscribe"))
+                .doOnUnsubscribe(() -> Log.i(TAG, "registerOnActivity doOnUnsubscribe"))
+                .doOnTerminate(() -> Log.i(TAG, "registerOnActivity doOnTerminate"))
+                .subscribe(testEvent -> {
+                    appendLine(String.format("Got event[%s] registerOnActivity", testEvent.getEvent()));
                 });
 
         RxBus.getDefault().registerOnView(TestEvent.class, getLeftBtn())
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnView doOnSubscribe");
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnView doOnUnsubscribe");
-                    }
-                })
-                .doOnTerminate(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "registerOnView doOnTerminate");
-                    }
-                })
-                .subscribe(new Action1<TestEvent>() {
-                    @Override
-                    public void call(TestEvent testEvent) {
-                        appendLine(String.format("Got event[%s] registerOnView", testEvent.getEvent()));
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-
-                    }
+                .doOnSubscribe(() -> Log.i(TAG, "registerOnView doOnSubscribe"))
+                .doOnUnsubscribe(() -> Log.i(TAG, "registerOnView doOnUnsubscribe"))
+                .doOnTerminate(() -> Log.i(TAG, "registerOnView doOnTerminate"))
+                .subscribe(testEvent -> {
+                    appendLine(String.format("Got event[%s] registerOnView", testEvent.getEvent()));
+                }, throwable -> {
                 });
     }
 

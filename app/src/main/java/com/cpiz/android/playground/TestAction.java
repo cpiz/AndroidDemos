@@ -16,13 +16,10 @@ public class TestAction {
 
     public TestAction(final Class<?> cls) {
         this.mName = cls.getSimpleName();
-        this.mAction = new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = new Intent(PlaygroundApp.getInstance(), cls);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                PlaygroundApp.getInstance().startActivity(intent);
-            }
+        this.mAction = () -> {
+            Intent intent = new Intent(PlaygroundApp.getInstance(), cls);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PlaygroundApp.getInstance().startActivity(intent);
         };
     }
 

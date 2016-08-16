@@ -44,41 +44,22 @@ public class RetrofitTestActivity extends BaseTestActivity {
                 .getUser("cpiz")
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
-                .doOnNext(new Action1<GitUser>() {
-                    @Override
-                    public void call(GitUser gitUser) {
-                        mGitUser = gitUser;
-                        Log.i(TAG, "set data to cache");
-                    }
+                .doOnNext(gitUser -> {
+                    mGitUser = gitUser;
+                    Log.i(TAG, "set data to cache");
                 });
 
         Observable.concat(obCache, obRemote)
-                .first(new Func1<GitUser, Boolean>() {
-                    @Override
-                    public Boolean call(GitUser gitUser) {
-                        return gitUser != null;
-                    }
-                })
+                .first(gitUser -> gitUser != null)
                 .timeout(5000, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.i(TAG, "doOnUnsubscribe");
-                    }
-                })
-                .subscribe(new Action1<GitUser>() {
-                    @Override
-                    public void call(GitUser gitUser) {
-                        Log.i(TAG, String.format("data = %s", gitUser));
-                        appendLine("data: " + new Gson().toJson(gitUser));
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        Log.i(TAG, "Error occured", throwable);
-                        appendLine(String.format("Get data failed, error=%s", throwable));
-                    }
+                .doOnUnsubscribe(() -> Log.i(TAG, "doOnUnsubscribe"))
+                .subscribe(gitUser -> {
+                    Log.i(TAG, String.format("data = %s", gitUser));
+                    appendLine("data: " + new Gson().toJson(gitUser));
+                }, throwable -> {
+                    Log.i(TAG, "Error occured", throwable);
+                    appendLine(String.format("Get data failed, error=%s", throwable));
                 });
     }
 

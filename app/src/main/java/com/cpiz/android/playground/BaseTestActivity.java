@@ -29,20 +29,10 @@ public abstract class BaseTestActivity extends RxActivity {
         initContentView();
 
         mLeftBtn = (Button) findViewById(R.id.btnLeft);
-        mLeftBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onLeftClick();
-            }
-        });
+        mLeftBtn.setOnClickListener(v -> onLeftClick());
 
         mRightBtn = (Button) findViewById(R.id.btnRight);
-        mRightBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onRightClick();
-            }
-        });
+        mRightBtn.setOnClickListener(v -> onRightClick());
 
         mEditText = (EditText) findViewById(R.id.editText);
 
@@ -105,12 +95,7 @@ public abstract class BaseTestActivity extends RxActivity {
         if (Looper.myLooper() == getMainLooper()) {
             mEditText.getText().clear();
         } else {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mEditText.getText().clear();
-                }
-            });
+            runOnUiThread(() -> mEditText.getText().clear());
         }
 
     }
@@ -119,12 +104,7 @@ public abstract class BaseTestActivity extends RxActivity {
         if (Looper.myLooper() == getMainLooper()) {
             mEditText.append(str + "\n");
         } else {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mEditText.append(str + "\n");
-                }
-            });
+            runOnUiThread(() -> mEditText.append(str + "\n"));
         }
     }
 

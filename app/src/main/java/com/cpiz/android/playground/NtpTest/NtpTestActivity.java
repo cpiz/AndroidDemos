@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.functions.Func0;
 import rx.schedulers.Schedulers;
 
@@ -61,36 +60,27 @@ public class NtpTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        Observable.defer(new Func0<Observable<Boolean>>() {
-            @Override
-            public Observable<Boolean> call() {
-                boolean success = false;
-                for (int i = 0; i < NTP_SERVERS.length; ++i) {
-                    if (mClient.requestTime(NTP_SERVERS[i], 2000)) {
-                        success = true;
-                    }
+        Observable.defer(() -> {
+            boolean success = false;
+            for (int i = 0; i < NTP_SERVERS.length; ++i) {
+                if (mClient.requestTime(NTP_SERVERS[i], 2000)) {
+                    success = true;
                 }
-                return Observable.just(success);
             }
+            return Observable.just(success);
         }).subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<Boolean>() {
-                               @Override
-                               public void call(Boolean aBoolean) {
-                                   if (aBoolean) {
-                                       long now = mClient.getNtpTime() + SystemClock.elapsedRealtime() - mClient.getNtpTimeReference();
-                                       appendLine((new DateTime(now)).toString("YYYY-MM-dd HH:mm:ss.SSS"));
-                                   } else {
-                                       appendLine("Sync time failed");
-                                   }
-                               }
-                           }
-                        , new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                appendLine("Sync time error");
-                                Log.e(TAG, "Sync time error", throwable);
+                .subscribe(aBoolean -> {
+                            if (aBoolean) {
+                                long now = mClient.getNtpTime() + SystemClock.elapsedRealtime() - mClient.getNtpTimeReference();
+                                appendLine((new DateTime(now)).toString("YYYY-MM-dd HH:mm:ss.SSS"));
+                            } else {
+                                appendLine("Sync time failed");
                             }
+                        }
+                        , throwable -> {
+                            appendLine("Sync time error");
+                            Log.e(TAG, "Sync time error", throwable);
                         }
                 );
     }

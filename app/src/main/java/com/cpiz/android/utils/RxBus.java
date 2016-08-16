@@ -67,12 +67,7 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> register(final Class<T> cls) {
-        return mSubject.filter(new Func1<Object, Boolean>() {
-            @Override
-            public Boolean call(Object o) {
-                return cls.isInstance(o);
-            }
-        }).cast(cls);
+        return mSubject.filter(o -> cls.isInstance(o)).cast(cls);
     }
 
     /**

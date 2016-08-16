@@ -56,12 +56,7 @@ public abstract class BaseListActivity extends ListActivity {
                 Button btn = (Button) convertView;
                 btn.setText(getItem(position).getName());
                 btn.setAllCaps(false);
-                btn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        getItem(position).getAction().run();
-                    }
-                });
+                btn.setOnClickListener(v -> getItem(position).getAction().run());
 
                 return btn;
             }

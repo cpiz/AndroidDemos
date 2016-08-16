@@ -265,23 +265,17 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
             changeFocusState(FocusState.FOCUS_READY);   // 隐藏对焦框
             invalidate();
 
-            Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
-                @Override
-                public void onShutter() {
-                    // 不处理，但会产生快门音
-                }
+            Camera.ShutterCallback shutterCallback = () -> {
+                // 不处理，但会产生快门音
             };
 
-            Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
-                @Override
-                public void onPictureTaken(byte[] bytes, Camera camera) {
-                    camera.stopPreview();  // 冻结画面
+            Camera.PictureCallback jpegCallback = (bytes, camera) -> {
+                camera.stopPreview();  // 冻结画面
 
-                    Bitmap output = processPictureData(bytes);
+                Bitmap output = processPictureData(bytes);
 
-                    if (callback != null) {
-                        callback.onSuccess(output);
-                    }
+                if (callback != null) {
+                    callback.onSuccess(output);
                 }
             };
 
@@ -762,14 +756,11 @@ public class CameraSurfaceView extends SurfaceView implements SensorEventListene
 
             try {
                 mCamera.setParameters(parameters);
-                mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean success, Camera camera) {
-                        Log.println(success ? Log.INFO : Log.WARN, TAG, "auto focus complete: success -> " + success);
-                        changeFocusState(success ? FocusState.FOCUS_COMPLETE : FocusState.FOCUS_FAILED);
-                        if (success && byTouch) {
-                            RingtonePlayer.Instance.playRingTone(R.raw.camera_focus, false);
-                        }
+                mCamera.autoFocus((success, camera) -> {
+                    Log.println(success ? Log.INFO : Log.WARN, TAG, "auto focus complete: success -> " + success);
+                    changeFocusState(success ? FocusState.FOCUS_COMPLETE : FocusState.FOCUS_FAILED);
+                    if (success && byTouch) {
+                        RingtonePlayer.Instance.playRingTone(R.raw.camera_focus, false);
                     }
                 });
             } catch (Exception e) {

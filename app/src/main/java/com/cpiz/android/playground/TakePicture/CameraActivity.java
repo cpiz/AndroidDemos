@@ -165,34 +165,20 @@ public class CameraActivity extends Activity {
     }
 
     private void initViews() {
-        findViewById(R.id.backBtn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on back button clicked");
-                finish();
-            }
+        findViewById(R.id.backBtn).setOnClickListener(v -> {
+            Log.i(TAG, "on back button clicked");
+            finish();
         });
 
         mPreviewClipLayout = (FixedRatioLayout) findViewById(R.id.previewClipLayout);
-        mPreviewClipLayout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                mCameraSurfaceView.setClipRect(new Rect(left, top, right, bottom));
-
-            }
-        });
+        mPreviewClipLayout.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> mCameraSurfaceView.setClipRect(new Rect(left, top, right, bottom)));
 
         mCameraSurfaceView = (CameraSurfaceView) findViewById(R.id.cameraSurfaceView);
         mCameraSurfaceView.setFrontCamera(mFrontCamera);
-        mCameraSurfaceView.setOnRotationListener(new CameraSurfaceView.OnRotationListener() {
-            @Override
-            public void onRotate(int newRotation, int oldRotation) {
-                toggleOrientationHint(
-                        (isPortraitMode() && newRotation != Surface.ROTATION_0)
-                                || (!isPortraitMode() && newRotation != Surface.ROTATION_270),
-                        isPortraitMode());
-            }
-        });
+        mCameraSurfaceView.setOnRotationListener((newRotation, oldRotation) -> toggleOrientationHint(
+                (isPortraitMode() && newRotation != Surface.ROTATION_0)
+                        || (!isPortraitMode() && newRotation != Surface.ROTATION_270),
+                isPortraitMode()));
 
         mHorizontalHintText = (TextView) findViewById(R.id.orientationHintText);
 
@@ -210,78 +196,60 @@ public class CameraActivity extends Activity {
         Log.i(TAG, String.format("Set aspect ratio widthRatio = %d, heightRatio = %d", mWidthRatio, mHeightRatio));
 
         cameraFlashBtn = (ImageButtonEx) findViewById(R.id.cameraFlashBtn);
-        cameraFlashBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on flash button clicked");
-                if ((cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_OFF))
-                        || (!cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_TORCH))) {
-                    cameraFlashBtn.setChecked(!cameraFlashBtn.isChecked());
-                } else {
-                    cameraFlashBtn.setEnabled(false);
-                    ToastUtils.show(CameraActivity.this, "Flash unsupported");
-                }
+        cameraFlashBtn.setOnClickListener(v -> {
+            Log.i(TAG, "on flash button clicked");
+            if ((cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_OFF))
+                    || (!cameraFlashBtn.isChecked() && mCameraSurfaceView.setFlashMode(CameraSurfaceView.FlashMode.FLASH_TORCH))) {
+                cameraFlashBtn.setChecked(!cameraFlashBtn.isChecked());
+            } else {
+                cameraFlashBtn.setEnabled(false);
+                ToastUtils.show(CameraActivity.this, "Flash unsupported");
             }
         });
 
         mTakePhotoBtn = (ImageButtonEx) findViewById(R.id.shutterBtn);
-        mTakePhotoBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.i(TAG, "on shutter button clicked");
-                setCameraButtonsEnabled(false); // 禁用拍照控制按钮，避免连击
-                mCameraSurfaceView.takePicture(new CameraSurfaceView.TakePictureCallback() {
-                    @Override
-                    public void onSuccess(Bitmap bitmap) {
-                        Log.v(TAG, "take picture step 4: on onSuccess");
-                        switchToCropMode();
-                        setCropImage(bitmap);
-                    }
+        mTakePhotoBtn.setOnClickListener(view -> {
+            Log.i(TAG, "on shutter button clicked");
+            setCameraButtonsEnabled(false); // 禁用拍照控制按钮，避免连击
+            mCameraSurfaceView.takePicture(new CameraSurfaceView.TakePictureCallback() {
+                @Override
+                public void onSuccess(Bitmap bitmap) {
+                    Log.v(TAG, "take picture step 4: on onSuccess");
+                    switchToCropMode();
+                    setCropImage(bitmap);
+                }
 
-                    @Override
-                    public void onError(Exception e) {
-                        Log.e(TAG, "onError", e);
-                        ToastUtils.show(CameraActivity.this, String.format("Take photo failed[%s]", e == null ? "" : e.getMessage()));
-                        setCameraButtonsEnabled(true);
-                    }
-                });
-            }
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "onError", e);
+                    ToastUtils.show(CameraActivity.this, String.format("Take photo failed[%s]", e == null ? "" : e.getMessage()));
+                    setCameraButtonsEnabled(true);
+                }
+            });
         });
 
         mGalleryBtn = (ImageButtonEx) findViewById(R.id.galleryBtn);
-        mGalleryBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on gallery button clicked");
-                openGallery();
-            }
+        mGalleryBtn.setOnClickListener(v -> {
+            Log.i(TAG, "on gallery button clicked");
+            openGallery();
         });
 
         mRotateBtn = (ImageButtonEx) findViewById(R.id.rotateBtn);
-        mRotateBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on rotate button clicked");
-                mCropImageView.rotateImage(90);
-            }
+        mRotateBtn.setOnClickListener(v -> {
+            Log.i(TAG, "on rotate button clicked");
+            mCropImageView.rotateImage(90);
         });
 
         mCancelCropBtn = (ImageButtonEx) findViewById(R.id.cancelPictureBtn);
-        mCancelCropBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on cancel crop button clicked");
-                cancel();
-            }
+        mCancelCropBtn.setOnClickListener(v -> {
+            Log.i(TAG, "on cancel crop button clicked");
+            cancel();
         });
 
         mConfirmCropBtn = (ImageButtonEx) findViewById(R.id.confirmPictureBtn);
-        mConfirmCropBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "on confirm crop button clicked");
-                confirm();
-            }
+        mConfirmCropBtn.setOnClickListener(v -> {
+            Log.i(TAG, "on confirm crop button clicked");
+            confirm();
         });
     }
 

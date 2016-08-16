@@ -43,12 +43,7 @@ public final class RingtonePlayer {
 
         mMediaPlayer.start();
         if (!repeat) {
-            mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    stopRingTone();
-                }
-            });
+            mMediaPlayer.setOnCompletionListener(mp -> stopRingTone());
         }
     }
 }

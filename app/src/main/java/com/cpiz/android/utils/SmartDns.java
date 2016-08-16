@@ -73,12 +73,7 @@ public enum SmartDns implements Dns {
     }
 
     SmartDns() {
-        mResumeError = new Func1<Throwable, Observable<? extends List<InetAddress>>>() {
-            @Override
-            public Observable<? extends List<InetAddress>> call(Throwable throwable) {
-                return Observable.empty();
-            }
-        };
+        mResumeError = throwable -> Observable.empty();
         mHttpDnsService = new RxServiceBuilder()
                 .client(OkHttpHelper.newClient())
                 .baseUrl(HTTPDNS_API_ENDPOINT)
@@ -122,29 +117,20 @@ public enum SmartDns implements Dns {
         // 并行查询
         final List<InetAddress> ret = new ArrayList<>();
         lookupViaConcurrentDns(hostname)
-                .subscribe(new Action1<List<InetAddress>>() {
-                    @Override
-                    public void call(List<InetAddress> addresses) {
-                        // 更新缓存
-                        mAddressCaches.put(hostname, new InetAddressCache(addresses));
-                        synchronized (ret) {
-                            ret.addAll(addresses);
-                            ret.notifyAll();
-                        }
+                .subscribe(addresses -> {
+                    // 更新缓存
+                    mAddressCaches.put(hostname, new InetAddressCache(addresses));
+                    synchronized (ret) {
+                        ret.addAll(addresses);
+                        ret.notifyAll();
                     }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        synchronized (ret) {
-                            ret.notifyAll();
-                        }
+                }, throwable -> {
+                    synchronized (ret) {
+                        ret.notifyAll();
                     }
-                }, new Action0() {
-                    @Override
-                    public void call() {
-                        synchronized (ret) {
-                            ret.notifyAll();
-                        }
+                }, () -> {
+                    synchronized (ret) {
+                        ret.notifyAll();
                     }
                 });
 
@@ -223,12 +209,7 @@ public enum SmartDns implements Dns {
                 }))*/;
 
         return Observable.concatEager(lookupViaHttp, lookupViaSys)
-                .first(new Func1<List<InetAddress>, Boolean>() {
-                    @Override
-                    public Boolean call(List<InetAddress> addresses) {
-                        return addresses != null && !addresses.isEmpty();
-                    }
-                })
+                .first(addresses -> addresses != null && !addresses.isEmpty())
                 /*.doOnSubscribe(new Action0() {
                     @Override
                     public void call() {
@@ -285,34 +266,31 @@ public enum SmartDns implements Dns {
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .timeout(LOOKUP_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .flatMap(new Func1<Response<ResponseBody>, Observable<List<InetAddress>>>() {
-                    @Override
-                    public Observable<List<InetAddress>> call(Response<ResponseBody> response) {
-                        final int status = response.code();
-                        if (status < 200 || status >= 300) {
-                            Log.w(TAG, "response status not ok, status: " + status);
-                            return Observable.empty();
-                        }
+                .flatMap(response -> {
+                    final int status = response.code();
+                    if (status < 200 || status >= 300) {
+                        Log.w(TAG, "response status not ok, status: " + status);
+                        return Observable.empty();
+                    }
 
-                        final ResponseBody data = response.body();
-                        if (data == null || data.contentLength() == 0) {
-                            Log.w(TAG, "lookupViaHttpDns, empty result");
-                            return Observable.empty();
-                        }
+                    final ResponseBody data = response.body();
+                    if (data == null || data.contentLength() == 0) {
+                        Log.w(TAG, "lookupViaHttpDns, empty result");
+                        return Observable.empty();
+                    }
 
-                        try {
-                            final List<InetAddress> ret = new ArrayList<>();
-                            String[] ipArray = data.string().split(";");
-                            for (String ip : ipArray) {
-                                InetAddress address = InetAddress.getByName(ip);
-                                ret.add(InetAddress.getByAddress(hostname, address.getAddress()));
-                            }
-                            Log.d(TAG, String.format("lookupViaHttpDns %s", ret));
-                            return Observable.just(ret);
-                        } catch (Throwable e) {
-                            Log.w(TAG, "lookupViaHttpDns, invalid result", e);
-                            return Observable.empty();
+                    try {
+                        final List<InetAddress> ret = new ArrayList<>();
+                        String[] ipArray = data.string().split(";");
+                        for (String ip : ipArray) {
+                            InetAddress address = InetAddress.getByName(ip);
+                            ret.add(InetAddress.getByAddress(hostname, address.getAddress()));
                         }
+                        Log.d(TAG, String.format("lookupViaHttpDns %s", ret));
+                        return Observable.just(ret);
+                    } catch (Throwable e) {
+                        Log.w(TAG, "lookupViaHttpDns, invalid result", e);
+                        return Observable.empty();
                     }
                 })
                 .onErrorResumeNext(mResumeError);

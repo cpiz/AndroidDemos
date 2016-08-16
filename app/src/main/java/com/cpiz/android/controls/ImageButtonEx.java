@@ -55,14 +55,11 @@ public class ImageButtonEx extends ImageButton implements Checkable {
     }
 
     private void init(Context context, AttributeSet attrs, int defStyle) {
-        mInternalOnClickListener = new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mExternalOnClickListener != null) {
-                    mExternalOnClickListener.onClick(v);
-                } else if (mCheckable) {
-                    toggle();
-                }
+        mInternalOnClickListener = v -> {
+            if (mExternalOnClickListener != null) {
+                mExternalOnClickListener.onClick(v);
+            } else if (mCheckable) {
+                toggle();
             }
         };
         super.setOnClickListener(mInternalOnClickListener);
