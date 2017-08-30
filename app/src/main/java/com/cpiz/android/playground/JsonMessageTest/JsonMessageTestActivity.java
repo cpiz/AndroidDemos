@@ -9,7 +9,6 @@ import com.google.gson.GsonBuilder;
 
 import java.util.List;
 
-import rx.functions.Action1;
 
 /**
  * 实现了一个通用的消息包装类，使用Gson序列化反序列化对象

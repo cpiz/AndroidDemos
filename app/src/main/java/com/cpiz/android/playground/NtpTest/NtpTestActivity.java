@@ -8,10 +8,12 @@ import com.cpiz.android.playground.BaseTestActivity;
 
 import org.joda.time.DateTime;
 
-import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func0;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by caijw on 2015/9/27.
@@ -60,15 +62,14 @@ public class NtpTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        Observable.defer(() -> {
-            boolean success = false;
-            for (int i = 0; i < NTP_SERVERS.length; ++i) {
-                if (mClient.requestTime(NTP_SERVERS[i], 2000)) {
-                    success = true;
-                }
-            }
-            return Observable.just(success);
-        }).subscribeOn(Schedulers.newThread())
+        Observable.fromArray(NTP_SERVERS)
+                .flatMap(new Function<String, ObservableSource<Boolean>>() {
+                    @Override
+                    public ObservableSource<Boolean> apply(@NonNull String s) throws Exception {
+                        return Observable.create(e -> e.onNext(mClient.requestTime(s, 2000)));
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(aBoolean -> {
                             if (aBoolean) {

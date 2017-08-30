@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -15,23 +16,24 @@ import com.cpiz.android.common.OkHttpHelper;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Single;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.Dns;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+
 
 /**
  * 智能DNS
@@ -52,7 +54,7 @@ public enum SmartDns implements Dns {
     private final HttpDnsService mHttpDnsService;
     private final ConcurrentHashMap<String, InetAddressCache> mAddressCaches = new ConcurrentHashMap<>();
     private BroadcastReceiver mNetworkChangedReceiver = null;
-    private Func1<Throwable, Observable<? extends List<InetAddress>>> mResumeError = null;
+    private Function<Throwable, Observable<? extends List<InetAddress>>> mResumeError = null;
 
     class InetAddressCache {
         long updateTime;
@@ -104,7 +106,7 @@ public enum SmartDns implements Dns {
     }
 
     @Override
-    public List<InetAddress> lookup(final String hostname) throws UnknownHostException {
+    public List<InetAddress> lookup(@NonNull final String hostname) throws UnknownHostException {
         Log.d(TAG, String.format("----> '%s'", hostname));
 
         // 优先查询本地缓存
@@ -116,23 +118,17 @@ public enum SmartDns implements Dns {
 
         // 并行查询
         final List<InetAddress> ret = new ArrayList<>();
-        lookupViaConcurrentDns(hostname)
-                .subscribe(addresses -> {
-                    // 更新缓存
-                    mAddressCaches.put(hostname, new InetAddressCache(addresses));
-                    synchronized (ret) {
-                        ret.addAll(addresses);
-                        ret.notifyAll();
-                    }
-                }, throwable -> {
-                    synchronized (ret) {
-                        ret.notifyAll();
-                    }
-                }, () -> {
-                    synchronized (ret) {
-                        ret.notifyAll();
-                    }
-                });
+        lookupViaConcurrentDns(hostname).subscribe(addresses -> {
+            mAddressCaches.put(hostname, new InetAddressCache(addresses));
+            synchronized (ret) {
+                ret.addAll(addresses);
+                ret.notifyAll();
+            }
+        }, throwable -> {
+            synchronized (ret) {
+                ret.notifyAll();
+            }
+        });
 
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (ret) {
@@ -161,90 +157,37 @@ public enum SmartDns implements Dns {
         }
     }
 
-    private Observable<List<InetAddress>> lookupViaConcurrentDns(final String hostname) {
+    private Single<List<InetAddress>> lookupViaConcurrentDns(final String hostname) {
         Observable<List<InetAddress>> lookupViaSys = lookupViaSysDns(hostname)
-                /*.doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.v(TAG, String.format("lookupViaSysDns onCall, hostname: '%s'", hostname));
-                    }
-                }).lift(new OperatorDoOnEach<>(new Subscriber<List<InetAddress>>() {
-                    @Override
-                    public void onNext(List<InetAddress> addresses) {
-                        Log.v(TAG, String.format("lookupViaSysDns onNext, addresses: '%s'", addresses));
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        Log.v(TAG, "lookupViaSysDns onCompleted");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "lookupViaSysDns onError", e);
-                    }
-                }))*/;
+                .doOnSubscribe(disposable -> Log.v(TAG, String.format("lookupViaSysDns onCall, hostname: '%s'", hostname)))
+                .doOnNext(addresses -> Log.v(TAG, String.format("lookupViaSysDns onNext, addresses: '%s'", addresses)))
+                .doOnComplete(() -> Log.v(TAG, "lookupViaSysDns onCompleted"))
+                .doOnError(e -> Log.e(TAG, "lookupViaSysDns onError", e));
 
         Observable<List<InetAddress>> lookupViaHttp = lookupViaHttpDns(hostname)
-                /*.doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.v(TAG, String.format("lookupViaHttpDns onCall, hostname: '%s'", hostname));
-                    }
-                }).lift(new OperatorDoOnEach<>(new Subscriber<List<InetAddress>>() {
-                    @Override
-                    public void onNext(List<InetAddress> addresses) {
-                        Log.v(TAG, String.format("lookupViaHttpDns onNext, addresses: '%s'", addresses));
-                    }
+                .doOnSubscribe(disposable -> Log.v(TAG, String.format("lookupViaHttpDns onCall, hostname: '%s'", hostname)))
+                .doOnNext(addresses -> Log.v(TAG, String.format("lookupViaHttpDns onNext, addresses: '%s'", addresses)))
+                .doOnComplete(() -> Log.v(TAG, "lookupViaHttpDns onCompleted"))
+                .doOnError(e -> Log.e(TAG, "lookupViaHttpDns onError", e));
 
-                    @Override
-                    public void onCompleted() {
-                        Log.v(TAG, "lookupViaHttpDns onCompleted");
-                    }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "lookupViaHttpDns onError", e);
-                    }
-                }))*/;
-
-        return Observable.concatEager(lookupViaHttp, lookupViaSys)
-                .first(addresses -> addresses != null && !addresses.isEmpty())
-                /*.doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        Log.v(TAG, String.format("lookupViaConcurrentDns onCall, hostname: '%s'", hostname));
-                    }
-                }).lift(new OperatorDoOnEach<>(new Subscriber<List<InetAddress>>() {
-                    @Override
-                    public void onNext(List<InetAddress> addresses) {
-                        Log.v(TAG, String.format("lookupViaConcurrentDns onNext, addresses: '%s'", addresses));
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        Log.v(TAG, "lookupViaConcurrentDns onCompleted");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "lookupViaConcurrentDns onError", e);
-                    }
-                }))*/;
+        return Observable.concatEager(Arrays.asList(lookupViaHttp, lookupViaSys))
+                .filter(addresses -> addresses != null && !addresses.isEmpty())
+                .first(new ArrayList<>())
+                .doOnSubscribe(disposable -> Log.v(TAG, String.format("lookupViaConcurrentDns onCall, hostname: '%s'", hostname)))
+                .doOnSuccess(addresses -> Log.v(TAG, String.format("lookupViaConcurrentDns onSuccess, addresses: '%s'", addresses)))
+                .doOnError(e -> Log.e(TAG, "lookupViaConcurrentDns onError", e));
     }
 
     private Observable<List<InetAddress>> lookupViaSysDns(final String hostname) {
-        return Observable.create(new Observable.OnSubscribe<List<InetAddress>>() {
-            @Override
-            public void call(Subscriber<? super List<InetAddress>> subscriber) {
-                try {
-                    List<InetAddress> ret = SYSTEM.lookup(hostname);
-                    Log.d(TAG, String.format("lookupViaSysDns %s", ret));
-                    subscriber.onNext(ret);
-                    subscriber.onCompleted();
-                } catch (UnknownHostException e) {
-                    subscriber.onError(e);
-                }
+        return Observable.create((ObservableOnSubscribe<List<InetAddress>>) emitter -> {
+            try {
+                List<InetAddress> ret = SYSTEM.lookup(hostname);
+                Log.d(TAG, String.format("lookupViaSysDns %s", ret));
+                emitter.onNext(ret);
+                emitter.onComplete();
+            } catch (UnknownHostException e) {
+                emitter.onError(e);
             }
         })
                 .timeout(LOOKUP_TIMEOUT_MS, TimeUnit.MILLISECONDS)

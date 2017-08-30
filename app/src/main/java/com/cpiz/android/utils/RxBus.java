@@ -1,21 +1,24 @@
 package com.cpiz.android.utils;
 
+import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.View;
 
-import com.jakewharton.rxbinding.view.RxView;
-import com.trello.rxlifecycle.ActivityEvent;
-import com.trello.rxlifecycle.FragmentEvent;
-import com.trello.rxlifecycle.RxLifecycle;
-import com.trello.rxlifecycle.components.RxActivity;
-import com.trello.rxlifecycle.components.RxDialogFragment;
-import com.trello.rxlifecycle.components.RxFragment;
+import com.jakewharton.rxrelay2.PublishRelay;
+import com.jakewharton.rxrelay2.Relay;
+import com.trello.rxlifecycle2.RxLifecycle;
+import com.trello.rxlifecycle2.android.ActivityEvent;
+import com.trello.rxlifecycle2.android.FragmentEvent;
+import com.trello.rxlifecycle2.android.RxLifecycleAndroid;
+import com.trello.rxlifecycle2.components.RxActivity;
+import com.trello.rxlifecycle2.components.support.RxFragmentActivity;
 
 import java.security.InvalidParameterException;
+import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.functions.Func1;
-import rx.subjects.PublishSubject;
-import rx.subjects.SerializedSubject;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Observable;
+
 
 /**
  * 基于Rx的事件总线
@@ -23,19 +26,29 @@ import rx.subjects.SerializedSubject;
  * <p/>
  * Created by caijw on 2015/8/31.
  */
+@SuppressWarnings("unused")
 public class RxBus {
-    private final SerializedSubject<Object, Object> mSubject;
+    private static final String TAG = "RxBus";
+    private final static RxBus mDefault = new RxBus(0, "Default");
+    private final Relay<Object> mRelay;
 
-    private final static RxBus mDefault = new RxBus();
+    private final int mMaxBufferSize;
+    private final String mName;
 
-    private RxBus() {
-        mSubject = new SerializedSubject<>(PublishSubject.create());
+    public String getName() {
+        return mName;
+    }
+
+    private RxBus(final int maxBufferSize, @NonNull final String name) {
+        mMaxBufferSize = maxBufferSize;
+        mName = name;
+        mRelay = PublishRelay.create().toSerialized();
     }
 
     /**
      * 获得默认总线实例
      *
-     * @return
+     * @return 默认事件总线实例
      */
     public static RxBus getDefault() {
         return mDefault;
@@ -44,19 +57,37 @@ public class RxBus {
     /**
      * 创建一个新总线实例
      *
-     * @return
+     * @return 新事件总线实例
      */
-    public static RxBus create() {
-        return new RxBus();
+    public static RxBus create(final int maxBufferSize,
+                               @NonNull final String name) {
+        return new RxBus(maxBufferSize, name);
     }
 
     /**
      * 向总线填入一个事件对象
      *
-     * @param event
+     * @param event 事件对象
      */
     public void post(Object event) {
-        mSubject.onNext(event);
+        if (event == null) {
+            Log.e(TAG, "event is null, can not be post!");
+            return;
+        }
+        mRelay.accept(event);
+    }
+
+    /**
+     * 向总线填入一个事件对象，延迟发送
+     *
+     * @param event     事件对象
+     * @param milliSecs 延迟毫秒时间
+     */
+    public void postDelay(final Object event, long milliSecs) {
+        Observable.timer(milliSecs, TimeUnit.MILLISECONDS)
+                .subscribe(
+                        aLong -> mRelay.accept(event),
+                        throwable -> Log.e(TAG, "Post Delay failed.", throwable));
     }
 
     /**
@@ -67,55 +98,112 @@ public class RxBus {
      * @return 事件源Observable
      */
     public <T> Observable<T> register(final Class<T> cls) {
-        return mSubject.filter(o -> cls.isInstance(o)).cast(cls);
+        if (mMaxBufferSize > 0) {
+            return mRelay.toFlowable(BackpressureStrategy.BUFFER)
+                    .filter(cls::isInstance)
+                    .onBackpressureBuffer(mMaxBufferSize)
+                    .cast(cls).toObservable();
+        }
+        return mRelay.filter(cls::isInstance).cast(cls);
     }
 
     /**
      * 过滤事件类型，获得一个可订阅的事件源
      * 使用该函数可以不用调用者管理 Subscription 的退订，在 activity onDestroy 时将自动销毁。
      *
-     * @param cls      要过滤的事件载体类型
-     * @param activity 绑定订阅的生命周期到一个 activity 上
+     * @param cls               要过滤的事件载体类型
+     * @param lifecycleActivity 绑定订阅的生命周期到一个 activity 上
      * @return 事件源Observable
      */
-    public <T> Observable<T> registerOnActivity(final Class<T> cls, final RxActivity activity) {
-        if (activity == null) {
-            throw new InvalidParameterException("activity can not be null");
+    public <T> Observable<T> register(final Class<T> cls, final RxFragmentActivity lifecycleActivity) {
+        if (lifecycleActivity == null) {
+            throw new InvalidParameterException("lifecycleActivity can not be null");
         }
 
-        return register(cls).compose(RxLifecycle.<T>bindUntilActivityEvent(activity.lifecycle(), ActivityEvent.DESTROY));
+        return register(cls).compose(RxLifecycle.bindUntilEvent(
+                lifecycleActivity.lifecycle(),
+                ActivityEvent.DESTROY));
+    }
+
+    /**
+     * 过滤事件类型，获得一个可订阅的事件源
+     * 使用该函数可以不用调用者管理 Subscription 的退订，在 activity onDestroy 时将自动销毁。
+     *
+     * @param cls               要过滤的事件载体类型
+     * @param lifecycleActivity 绑定订阅的生命周期到一个 activity 上
+     * @return 事件源Observable
+     */
+    public <T> Observable<T> register(final Class<T> cls, final RxActivity lifecycleActivity) {
+        if (lifecycleActivity == null) {
+            throw new InvalidParameterException("lifecycleActivity can not be null");
+        }
+
+        return register(cls).compose(
+                RxLifecycle.bindUntilEvent(
+                        lifecycleActivity.lifecycle(),
+                        ActivityEvent.DESTROY));
     }
 
     /**
      * 过滤事件类型，获得一个可订阅的事件源
      * 使用该函数可以不用调用者管理 Subscription 的退订，在 fragment onDestroy 时将自动销毁。
      *
-     * @param cls      要过滤的事件载体类型
-     * @param fragment 绑定订阅的生命周期到一个 fragment 上
+     * @param cls               要过滤的事件载体类型
+     * @param lifecycleFragment 绑定订阅的生命周期到一个 fragment 上
      * @return 事件源Observable
      */
-    public <T> Observable<T> registerOnFragment(final Class<T> cls, final RxFragment fragment) {
-        if (fragment == null) {
-            throw new InvalidParameterException("fragment can not be null");
+    public <T> Observable<T> register(final Class<T> cls,
+                                      final com.trello.rxlifecycle2.components.support.RxFragment lifecycleFragment) {
+        if (lifecycleFragment == null) {
+            throw new InvalidParameterException("lifecycleFragment can not be null");
         }
 
-        return register(cls).compose(RxLifecycle.<T>bindUntilFragmentEvent(fragment.lifecycle(), FragmentEvent.DESTROY));
+        return register(cls).compose(
+                RxLifecycle.bindUntilEvent(lifecycleFragment.lifecycle(),
+                        FragmentEvent.DESTROY));
     }
 
     /**
      * 过滤事件类型，获得一个可订阅的事件源
      * 使用该函数可以不用调用者管理 Subscription 的退订，在 fragment onDestroy 时将自动销毁。
      *
-     * @param cls         要过滤的事件载体类型
-     * @param dlgFragment 绑定订阅的生命周期到一个 DialogFragment 上
+     * @param cls               要过滤的事件载体类型
+     * @param lifecycleFragment 绑定订阅的生命周期到一个 fragment 上
      * @return 事件源Observable
      */
-    public <T> Observable<T> registerOnDialogFragment(final Class<T> cls, final RxDialogFragment dlgFragment) {
-        if (dlgFragment == null) {
-            throw new InvalidParameterException("dlgFragment can not be null");
+    public <T> Observable<T> register(final Class<T> cls,
+                                      final com.trello.rxlifecycle2.components.RxFragment lifecycleFragment) {
+        if (lifecycleFragment == null) {
+            throw new InvalidParameterException("lifecycleFragment can not be null");
         }
 
-        return register(cls).compose(RxLifecycle.<T>bindUntilFragmentEvent(dlgFragment.lifecycle(), FragmentEvent.DESTROY));
+        return register(cls).compose(RxLifecycle.bindUntilEvent(lifecycleFragment.lifecycle(), FragmentEvent.DESTROY));
+    }
+
+    /**
+     * 过滤事件类型，获得一个可订阅的事件源
+     * 使用该函数可以不用调用者管理 Subscription 的退订，在 fragment onDestroy 时将自动销毁。
+     *
+     * @param cls               要过滤的事件载体类型
+     * @param lifecycleFragment 绑定订阅的生命周期到一个 DialogFragment 上
+     * @return 事件源Observable
+     */
+    public <T> Observable<T> register(final Class<T> cls,
+                                      final com.trello.rxlifecycle2.components.RxDialogFragment lifecycleFragment) {
+        if (lifecycleFragment == null) {
+            throw new InvalidParameterException("lifecycleFragment can not be null");
+        }
+
+        return register(cls).compose(RxLifecycle.bindUntilEvent(lifecycleFragment.lifecycle(), FragmentEvent.DESTROY));
+    }
+
+    public <T> Observable<T> register(final Class<T> cls,
+                                      final com.trello.rxlifecycle2.components.support.RxDialogFragment lifecycleFragment) {
+        if (lifecycleFragment == null) {
+            throw new InvalidParameterException("lifecycleFragment can not be null");
+        }
+
+        return register(cls).compose(RxLifecycle.bindUntilEvent(lifecycleFragment.lifecycle(), FragmentEvent.DESTROY));
     }
 
     /**
@@ -123,15 +211,15 @@ public class RxBus {
      * 不同于 register，该函数可以不用调用者管理 Subscription 的退订，在view detached时将自动销毁。
      * 注意：该函数必须在UI现场调用
      *
-     * @param cls  要过滤的事件载体类型
-     * @param view 绑定订阅的生命周期到一个 view 上
+     * @param cls           要过滤的事件载体类型
+     * @param lifecycleView 绑定订阅的生命周期到一个 view 上
      * @return 事件源Observable
      */
-    public <T> Observable<T> registerOnView(final Class<T> cls, final View view) {
-        if (view == null) {
+    public <T> Observable<T> register(final Class<T> cls, final View lifecycleView) {
+        if (lifecycleView == null) {
             throw new InvalidParameterException("view can not be null");
         }
 
-        return register(cls).takeUntil(RxView.detaches(view));
+        return register(cls).compose(RxLifecycleAndroid.bindView(lifecycleView));
     }
 }

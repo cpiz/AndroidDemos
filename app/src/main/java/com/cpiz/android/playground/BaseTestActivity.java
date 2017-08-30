@@ -8,7 +8,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.trello.rxlifecycle.components.RxActivity;
+import com.trello.rxlifecycle2.components.RxActivity;
 
 /**
  * 测试用Activity基类

@@ -6,12 +6,9 @@ import android.util.Log;
 import com.cpiz.android.playground.BaseTestActivity;
 import com.cpiz.android.utils.RxBus;
 
-import rx.functions.Action0;
-import rx.functions.Action1;
-
 /**
  * 实现一个基于RxBus的事件总线
- *
+ * <p>
  * Created by caijw on 2015/8/31.
  */
 public class RxBusTestActivity extends BaseTestActivity {
@@ -28,22 +25,19 @@ public class RxBusTestActivity extends BaseTestActivity {
 
         RxBus.getDefault().post(new TestEvent("test 0"));   // post before register
 
-        RxBus.getDefault().registerOnActivity(TestEvent.class, this)
-                .doOnSubscribe(() -> Log.i(TAG, "registerOnActivity doOnSubscribe"))
-                .doOnUnsubscribe(() -> Log.i(TAG, "registerOnActivity doOnUnsubscribe"))
+        RxBus.getDefault().register(TestEvent.class, this)
+                .doOnSubscribe((disposable) -> Log.i(TAG, "registerOnActivity doOnSubscribe"))
+                .doOnDispose(() -> Log.i(TAG, "registerOnActivity doOnDispose"))
                 .doOnTerminate(() -> Log.i(TAG, "registerOnActivity doOnTerminate"))
-                .subscribe(testEvent -> {
-                    appendLine(String.format("Got event[%s] registerOnActivity", testEvent.getEvent()));
-                });
+                .subscribe(testEvent -> appendLine(String.format("Got event[%s] registerOnActivity", testEvent.getEvent())));
 
-        RxBus.getDefault().registerOnView(TestEvent.class, getLeftBtn())
-                .doOnSubscribe(() -> Log.i(TAG, "registerOnView doOnSubscribe"))
-                .doOnUnsubscribe(() -> Log.i(TAG, "registerOnView doOnUnsubscribe"))
+        RxBus.getDefault().register(TestEvent.class, getLeftBtn())
+                .doOnSubscribe((disposable) -> Log.i(TAG, "registerOnView doOnSubscribe"))
+                .doOnDispose(() -> Log.i(TAG, "registerOnView doOnDispose"))
                 .doOnTerminate(() -> Log.i(TAG, "registerOnView doOnTerminate"))
-                .subscribe(testEvent -> {
-                    appendLine(String.format("Got event[%s] registerOnView", testEvent.getEvent()));
-                }, throwable -> {
-                });
+                .subscribe(testEvent -> appendLine(String.format("Got event[%s] registerOnView", testEvent.getEvent())),
+                        throwable -> {
+                        });
     }
 
     @Override
@@ -53,14 +47,14 @@ public class RxBusTestActivity extends BaseTestActivity {
         RxBus.getDefault().post(new TestEvent("test 2"));
     }
 
-    class TestEvent {
+    private class TestEvent {
         private String mEvent;
 
-        public TestEvent(String event) {
+        TestEvent(String event) {
             this.mEvent = event;
         }
 
-        public String getEvent() {
+        String getEvent() {
             return mEvent;
         }
     }

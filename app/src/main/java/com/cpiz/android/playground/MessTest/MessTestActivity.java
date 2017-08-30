@@ -6,7 +6,9 @@ import com.cpiz.android.playground.BaseTestActivity;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
+
 
 /**
  * Created by caijw on 2015/10/16.
@@ -28,24 +30,9 @@ public class MessTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        Subscriber<Long> subscriber = new Subscriber<Long>() {
-            @Override
-            public void onCompleted() {
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.e(TAG, "onError", e);
-            }
-
-            @Override
-            public void onNext(Long aLong) {
-                Log.d(TAG, String.format("aLone = %d", aLong));
-            }
-        };
-
-        rx.Observable.interval(1, TimeUnit.SECONDS).subscribe(subscriber);
-        rx.Observable.interval(2, TimeUnit.SECONDS).subscribe(subscriber);
-        rx.Observable.interval(3, TimeUnit.SECONDS).subscribe(subscriber);
+        Consumer<Long> consumer = aLong -> Log.d(TAG, String.format("aLone = %d", aLong));
+        Observable.interval(1, TimeUnit.SECONDS).subscribe(consumer);
+        Observable.interval(2, TimeUnit.SECONDS).subscribe(consumer);
+        Observable.interval(3, TimeUnit.SECONDS).subscribe(consumer);
     }
 }

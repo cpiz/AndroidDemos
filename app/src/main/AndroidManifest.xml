@@ -39,6 +39,7 @@
 
         <activity android:name=".EventBusTest.EventBusTestActivity"/>
         <activity android:name=".RxBusTest.RxBusTestActivity"/>
+        <activity android:name=".RxJavaTest.RxJavaTestActivity"/>
         <activity android:name=".LoganSquareTest.LoganSquareTestActivity"/>
         <activity android:name=".JsonMessageTest.JsonMessageTestActivity"/>
         <activity android:name=".RetrofitTest.RetrofitTestActivity"/>

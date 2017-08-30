@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.widget.EditText;
 
 import com.cpiz.android.playground.R;
-import com.trello.rxlifecycle.components.RxActivity;
+import com.trello.rxlifecycle2.components.RxActivity;
 
 import butterknife.BindString;
 import butterknife.BindView;

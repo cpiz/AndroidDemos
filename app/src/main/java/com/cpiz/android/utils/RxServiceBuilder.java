@@ -2,10 +2,11 @@ package com.cpiz.android.utils;
 
 import com.google.gson.Gson;
 
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
@@ -18,8 +19,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public final class RxServiceBuilder {
     private static final String TAG = "RxServiceBuilder";
     private static final Gson DEFAULT_GSON = new Gson();
+    private static final OkHttpClient DEFAULT_CLIENT = new OkHttpClient();
 
-    private OkHttpClient mOkHttpClient = null;
+    private OkHttpClient mOkHttpClient = DEFAULT_CLIENT;
     private String mBaseUrl = "http://localhost";
     private Gson mGson = DEFAULT_GSON;
 
@@ -61,7 +63,7 @@ public final class RxServiceBuilder {
         final Retrofit retrofit = new Retrofit.Builder()
                 .client(mOkHttpClient)
                 .baseUrl(baseUrl)
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
                 .addConverterFactory(converter)
                 .build();
         return retrofit.create(serviceClass);

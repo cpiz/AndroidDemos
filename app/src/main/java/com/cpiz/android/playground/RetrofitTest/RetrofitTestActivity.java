@@ -9,15 +9,15 @@ import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.schedulers.Schedulers;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 /**
  * Retrofit使用
@@ -30,12 +30,11 @@ public class RetrofitTestActivity extends BaseTestActivity {
 
     @Override
     public void onLeftClick() {
-        Observable<GitUser> obCache = Observable.create(new Observable.OnSubscribe<GitUser>() {
-            @Override
-            public void call(Subscriber<? super GitUser> subscriber) {
-                subscriber.onNext(mGitUser);
-                subscriber.onCompleted();
+        Observable<GitUser> obCache = Observable.create(e -> {
+            if (mGitUser != null) {
+                e.onNext(mGitUser);
             }
+            e.onComplete();
         });
 
         Observable<GitUser> obRemote = new RxServiceBuilder()
@@ -50,10 +49,10 @@ public class RetrofitTestActivity extends BaseTestActivity {
                 });
 
         Observable.concat(obCache, obRemote)
-                .first(gitUser -> gitUser != null)
+                .first(new GitUser())
                 .timeout(5000, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnUnsubscribe(() -> Log.i(TAG, "doOnUnsubscribe"))
+                .doOnDispose(() -> Log.i(TAG, "doOnDispose"))
                 .subscribe(gitUser -> {
                     Log.i(TAG, String.format("data = %s", gitUser));
                     appendLine("data: " + new Gson().toJson(gitUser));
@@ -64,7 +63,7 @@ public class RetrofitTestActivity extends BaseTestActivity {
     }
 
     static class GitUser {
-        public GitUser() {
+        GitUser() {
             Log.i(TAG, "GitUser constructed");
         }
 
