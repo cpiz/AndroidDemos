@@ -6,32 +6,60 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.cpiz.android.playground.ExButtonTest.TintableImageButtonActivity"
-    >
+    tools:context="com.cpiz.android.playground.ExButtonTest.TintableImageButtonActivity">
+
+    <!--<com.cpiz.android.playground.ExButtonTest.TintableImageButton-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:padding="30dp"-->
+    <!--android:src="@drawable/icon_launcher"-->
+    <!--app:bgTint="@color/image_button_light_tint_selector"-->
+    <!--app:imgTint="@color/image_button_light_tint_selector" />-->
+
+    <!--<com.cpiz.android.playground.ExButtonTest.TintableImageButton-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:background="#333333"-->
+    <!--android:padding="30dp"-->
+    <!--android:src="@drawable/icon_gallery"-->
+    <!--app:imgTint="@color/image_button_dark_tint_selector" />-->
+
+    <!--<com.cpiz.android.playground.ExButtonTest.TintableImageButton-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:background="#333333"-->
+    <!--android:padding="30dp"-->
+    <!--android:src="@drawable/yiqibo_entry_normal"-->
+    <!--app:imgTint="@color/image_button_dark_tint_selector" />-->
 
     <com.cpiz.android.playground.ExButtonTest.TintableImageButton
-        android:id="@+id/tintableImageButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="30dp"
         android:src="@drawable/icon_launcher"
-        app:bgTint="@color/image_button_light_tint_selector"
+        android:background="@drawable/keep_orientation_edit_text_bg"
+        app:bgTint="@color/image_button_test_tint_selector"
         app:imgTint="@color/image_button_light_tint_selector" />
 
     <com.cpiz.android.playground.ExButtonTest.TintableImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#333333"
         android:padding="30dp"
-        android:src="@drawable/icon_gallery"
+        android:src="@drawable/icon_launcher"
+        app:bgTint="@color/image_button_test_tint_selector" />
+
+    <com.cpiz.android.playground.ExButtonTest.TintableImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#888888"
+        android:padding="30dp"
+        android:src="@drawable/icon_camera_flash_off"
         app:imgTint="@color/image_button_dark_tint_selector" />
 
     <com.cpiz.android.playground.ExButtonTest.TintableImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#333333"
-        android:padding="30dp"
-        android:src="@drawable/yiqibo_entry_normal"
-        app:imgTint="@color/image_button_dark_tint_selector" />
+        android:background="#888888"
+        android:padding="30dp" />
 
 </LinearLayout>

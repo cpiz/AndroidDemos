@@ -28,11 +28,11 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            <!--<intent-filter>-->
+            <!--<action android:name="android.intent.action.MAIN" />-->
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!--<category android:name="android.intent.category.LAUNCHER" />-->
+            <!--</intent-filter>-->
         </activity>
         <activity android:name=".EventBusTest.EventBusTestActivity" />
         <activity android:name=".RxBusTest.RxBusTestActivity" />
@@ -53,7 +53,13 @@
         <activity android:name=".AnnotationsTest.AnnotationsActivity" />
         <activity android:name=".butterKnifeTest.ButterKnifeTestActivity" />
         <activity android:name=".InputOnlyEditTextTest.InputOnlyEditTextActivity" />
-        <activity android:name=".ExButtonTest.TintableImageButtonActivity" />
+        <activity android:name=".ExButtonTest.TintableImageButtonActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

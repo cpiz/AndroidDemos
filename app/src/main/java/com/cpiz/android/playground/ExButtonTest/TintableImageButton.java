@@ -44,7 +44,6 @@ public class TintableImageButton extends ImageButton {
 
         if (attrs != null) {
             TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TintableImageButton, defStyleAttr, 0);
-
             mImgTintList = a.getColorStateList(R.styleable.TintableImageButton_imgTint);
             mBgTintList = a.getColorStateList(R.styleable.TintableImageButton_bgTint);
             a.recycle();
@@ -53,7 +52,7 @@ public class TintableImageButton extends ImageButton {
 
     public void setImgTintList(ColorStateList tint) {
         this.mImgTintList = tint;
-        applyTintColor();
+        applyImgTintColor();
     }
 
     public ColorStateList getImgTintList() {
@@ -62,7 +61,7 @@ public class TintableImageButton extends ImageButton {
 
     public void setImgTintMode(PorterDuff.Mode mode) {
         this.mImgTintMode = mode;
-        applyTintColor();
+        applyImgTintColor();
     }
 
     public PorterDuff.Mode getImgTintMode() {
@@ -90,42 +89,34 @@ public class TintableImageButton extends ImageButton {
     @Override
     protected void drawableStateChanged() {
         super.drawableStateChanged();
-
-        if (mImgTintList != null) {
-            applyTintColor();
-        }
-
-        if (mBgTintList != null) {
-            applyBackgroundTintColor();
-        }
+        applyImgTintColor();
+        applyBackgroundTintColor();
     }
 
-    private void applyTintColor() {
-        if (mImgTintList == null) {
-            clearColorFilter();
-        } else {
-            int color = mImgTintList.getColorForState(getDrawableState(), DEFAULT_TINT_COLOR);
-            setColorFilter(color, mImgTintMode);
-        }
+    private void applyImgTintColor() {
+        applyTint(getDrawable(), getDrawableState(), mImgTintList, mImgTintMode);
     }
 
     private void applyBackgroundTintColor() {
-        final Drawable background = getBackground();
-        if (background == null) {
+        applyTint(getBackground(), getDrawableState(), mBgTintList, mBgTintMode);
+    }
+
+    private static void applyTint(Drawable drawable, int[] drawableState, ColorStateList tintList, PorterDuff.Mode tintMode) {
+        if (drawable == null) {
             return;
         }
 
-        if (mBgTintList == null) {
-            background.clearColorFilter();
+        if (tintList == null) {
+            drawable.clearColorFilter();
         } else {
-            int color = mBgTintList.getColorForState(getDrawableState(), DEFAULT_TINT_COLOR);
-            background.setColorFilter(color, mBgTintMode);
+            int color = tintList.getColorForState(drawableState, DEFAULT_TINT_COLOR);
+            drawable.setColorFilter(color, tintMode);
         }
 
         if (Build.VERSION.SDK_INT <= 23) {
             // Pre-v23 there is no guarantee that a state change will invoke an invalidation,
             // so we force it ourselves
-            background.invalidateSelf();
+            drawable.invalidateSelf();
         }
     }
 }
