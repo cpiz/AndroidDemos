@@ -15,22 +15,23 @@
         android:layout_height="wrap_content"
         android:padding="30dp"
         android:src="@drawable/icon_launcher"
-        app:bgTint="@color/image_button_tint_selector"
-        app:imgTint="@color/image_button_tint_selector" />
+        app:bgTint="@color/image_button_light_tint_selector"
+        app:imgTint="@color/image_button_light_tint_selector" />
 
     <com.cpiz.android.playground.ExButtonTest.TintableImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/icon_gallery"
+        android:background="#333333"
         android:padding="30dp"
-        android:src="@drawable/icon_launcher"
-        app:bgTint="@color/image_button_tint_selector"
-        app:imgTint="#FFFFFF" />
+        android:src="@drawable/icon_gallery"
+        app:imgTint="@color/image_button_dark_tint_selector" />
 
     <com.cpiz.android.playground.ExButtonTest.TintableImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="#333333"
         android:padding="30dp"
-        android:src="@drawable/icon_launcher" />
+        android:src="@drawable/yiqibo_entry_normal"
+        app:imgTint="@color/image_button_dark_tint_selector" />
 
 </LinearLayout>
