@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TintableImageButton">
+        <attr name="imgTint" format="reference|color"/>
+        <attr name="bgTint" format="reference|color"/>
+    </declare-styleable>
+</resources>

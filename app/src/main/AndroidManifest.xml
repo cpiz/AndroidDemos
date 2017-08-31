@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    package="com.cpiz.android.playground"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.cpiz.android.playground">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.FLASHLIGHT"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
 
     <uses-feature
         android:name="android.hardware.sensor.accelerometer"
-        android:required="false"/>
-    <uses-feature android:name="android.hardware.screen.landscape"/>
+        android:required="false" />
+    <uses-feature android:name="android.hardware.screen.landscape" />
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="true"/>
-    <uses-feature android:name="android.hardware.camera.autofocus"/>
+        android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature
         android:name="android.hardware.camera.flash"
-        android:required="false"/>
+        android:required="false" />
 
     <application
         android:name=".PlaygroundApp"
@@ -28,34 +27,33 @@
         android:icon="@drawable/icon_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
-
-        <activity
-            android:name=".MainActivity">
+        <activity android:name=".MainActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".EventBusTest.EventBusTestActivity"/>
-        <activity android:name=".RxBusTest.RxBusTestActivity"/>
-        <activity android:name=".RxJavaTest.RxJavaTestActivity"/>
-        <activity android:name=".LoganSquareTest.LoganSquareTestActivity"/>
-        <activity android:name=".JsonMessageTest.JsonMessageTestActivity"/>
-        <activity android:name=".RetrofitTest.RetrofitTestActivity"/>
-        <activity android:name=".OkHttpSpeedLimit.OkHttpTestActivity"/>
-        <activity android:name=".TakePicture.CameraTestActivity"/>
+        <activity android:name=".EventBusTest.EventBusTestActivity" />
+        <activity android:name=".RxBusTest.RxBusTestActivity" />
+        <activity android:name=".RxJavaTest.RxJavaTestActivity" />
+        <activity android:name=".LoganSquareTest.LoganSquareTestActivity" />
+        <activity android:name=".JsonMessageTest.JsonMessageTestActivity" />
+        <activity android:name=".RetrofitTest.RetrofitTestActivity" />
+        <activity android:name=".OkHttpSpeedLimit.OkHttpTestActivity" />
+        <activity android:name=".TakePicture.CameraTestActivity" />
         <activity
             android:name=".TakePicture.CameraActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:screenOrientation="nosensor">
         </activity>
-        <activity android:name=".NtpTest.NtpTestActivity"/>
-        <activity android:name=".MessTest.MessTestActivity"/>
-        <activity android:name=".SmartDnsTest.SmartDnsTestActivity"/>
-        <activity android:name=".AnnotationsTest.AnnotationsActivity"/>
-        <activity android:name=".butterKnifeTest.ButterKnifeTestActivity"/>
-        <activity android:name=".InputOnlyEditTextTest.InputOnlyEditTextActivity"/>
+        <activity android:name=".NtpTest.NtpTestActivity" />
+        <activity android:name=".MessTest.MessTestActivity" />
+        <activity android:name=".SmartDnsTest.SmartDnsTestActivity" />
+        <activity android:name=".AnnotationsTest.AnnotationsActivity" />
+        <activity android:name=".butterKnifeTest.ButterKnifeTestActivity" />
+        <activity android:name=".InputOnlyEditTextTest.InputOnlyEditTextActivity" />
+        <activity android:name=".ExButtonTest.TintableImageButtonActivity" />
     </application>
 
 </manifest>

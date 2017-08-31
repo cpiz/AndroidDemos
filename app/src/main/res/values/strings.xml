@@ -3,4 +3,5 @@
     <string name="please_keep_landscape">请保持横屏拍照</string>
     <string name="please_keep_portrait">请保持竖屏拍照</string>
     <string name="invalid_image">无效的图像</string>
+    <string name="title_activity_ex_button">ExButtonActivity</string>
 </resources>
